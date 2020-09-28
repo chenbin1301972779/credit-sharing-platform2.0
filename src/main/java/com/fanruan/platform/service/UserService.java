@@ -230,7 +230,7 @@ public class UserService {
     }
 
     private void updatePermission(String operator, Integer userId, String permissionRoles) {
-        if(StringUtils.isBlank(operator)||StringUtils.isBlank(permissionRoles)){
+        if(StringUtils.isBlank(operator)){
             return;
         }
         String[] split = permissionRoles.split(",");

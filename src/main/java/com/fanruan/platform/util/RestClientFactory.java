@@ -4,12 +4,14 @@ import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Service;
 
 public class RestClientFactory{
-
 //    private static final String HOST = "106.14.210.23";
-    private static final String HOST = "10.0.105.4";
-//    private static final String HOST = "10.0.132.12";
+//    private static final String HOST = "10.0.105.4";
+    private static final String HOST = "10.0.132.12";
     private static final int PORT = 9200;
     private static final String SCHEMA = "http";
     private static final int CONNECT_TIME_OUT = 1000;

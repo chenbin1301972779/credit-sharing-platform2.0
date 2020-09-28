@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.fanruan.platform.mapper.CommonsMapper">
+
+    <resultMap id="getBlackListResultMap" type="com.fanruan.platform.bean.BlackList">
+        <result column="PID" jdbcType="VARCHAR" property="pid" />
+        <result column="ENTNAME" jdbcType="VARCHAR" property="entName" />
+        <result column="CODE" jdbcType="VARCHAR" property="code" />
+        <result column="START_DATE" jdbcType="TIMESTAMP" property="startDate" />
+        <result column="END_DATE" jdbcType="TIMESTAMP" property="endDate" />
+        <result column="GRADE" jdbcType="VARCHAR" property="grade" />
+        <result column="REASON" jdbcType="VARCHAR" property="reason" />
+        <result column="REASON_URL" jdbcType="VARCHAR" property="reasonUrl" />
+        <result column="PUBLISH_DEPT" jdbcType="VARCHAR" property="publishDept" />
+        <result column="APPROVE_DEPT" jdbcType="VARCHAR" property="approveDept" />
+        <result column="PUBLISH_TIME" jdbcType="TIMESTAMP" property="publishTime" />
+        <result column="TYPE" jdbcType="VARCHAR" property="type" />
+        <result column="STATUS" jdbcType="VARCHAR" property="status" />
+        <result column="APPROVE_TIME" jdbcType="TIMESTAMP" property="approveTime" />
+        <result column="UPDATEBY" jdbcType="VARCHAR" property="updateby" />
+        <result column="CANCEL_BY" jdbcType="VARCHAR" property="cancelBy" />
+        <result column="CANCEL_TIME" jdbcType="VARCHAR" property="cancelTime" />
+        <result column="CANCEL_REASON" jdbcType="VARCHAR" property="cancelReason" />
+    </resultMap>
+
+    <select id="getBlackList" resultType="com.fanruan.platform.bean.BlackList">
+        select * from INPUT_BLACKLIST where sysdate &lt;=add_months(start_date,1) and status=2
+        and COMPANYNAME in (
+        SELECT DISTINCT O.SUBCOMPANYNAME --二级公司
+        FROM ODS_HR_PSNDOC A
+        LEFT JOIN DIM_ORG O ON A.ORGCODE=O.SUBCOMPANYCODE
+        WHERE  A.CODE=#{userCode}--用户名
+        AND O.TP=2
+        UNION
+        SELECT DISTINCT O.SUBCOMPANYNAME --管理员
+        FROM ODS_HR_PSNDOC A
+        LEFT JOIN DIM_ORG O ON A.ORGCODE=O.SUBCOMPANYCODE
+        WHERE  'admin'=#{userCode}--用户名
+        AND O.TP IN (1,2)
+        UNION
+        SELECT DISTINCT O.SUBCOMPANYNAME --集团
+        FROM DIM_ORG O
+        WHERE  '浙江省国际贸易集团有限公司' =
+        (
+        SELECT DISTINCT O.SUBCOMPANYNAME --集团
+        FROM ODS_HR_PSNDOC A
+        LEFT JOIN DIM_ORG O ON A.ORGCODE=O.SUBCOMPANYCODE
+        WHERE  A.CODE=#{userCode}--用户名
+        AND O.TP=1
+        )
+        AND O.TP IN (1,2)
+        )
+    </select>
+
+</mapper>
+

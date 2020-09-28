@@ -97,7 +97,8 @@ public class CommonController {
     public String getBlackList(@RequestBody Map<String,Object> param) throws JsonProcessingException {
         HashMap<String,Object> hs=new HashMap<>();
         ObjectMapper objectMapper=new ObjectMapper();
-        List<BlackList> blackList = commonService.getBlackList();
+        String userCode = (String) param.get("userCode");
+        List<BlackList> blackList = commonService.getBlackList(userCode);
         hs.put("blackList",blackList);
         hs.put("code",0);
         hs.put("msg","");

@@ -1,38 +1,23 @@
 package com.fanruan.platform.service;
 
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.fanruan.platform.bean.*;
 import com.fanruan.platform.constant.CommonUtils;
 import com.fanruan.platform.dao.*;
 import com.fanruan.platform.mapper.CommonMapper;
-import com.fanruan.platform.util.CommonUtil;
-import com.fanruan.platform.util.DateUtil;
-import com.fanruan.platform.util.MD5Util;
-import com.fanruan.platform.util.StringUtil;
+import com.fanruan.platform.mapper.CommonsMapper;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.sinosure.exchange.edi.po.EdiFeedback;
-import com.sinosure.exchange.edi.po.EntrustInput;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.springframework.web.client.RestTemplate;
 
-import javax.xml.bind.JAXBElement;
-import java.nio.charset.Charset;
 import java.sql.Date;
 import java.sql.Timestamp;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 ;
 
@@ -56,12 +41,20 @@ public class CommonService {
     private CommonMapper commonMapper;
 
     @Autowired
+    private CommonsMapper commonsMapper;
+
+    @Autowired
     private LogCreditOperDao logCreditOperDao;
 
-    public List<BlackList> getBlackList() {
-//        return blackListDao.findAllByStatusAndStartDateBeforeAndEndDateAfter("2", new Date(System.currentTimeMillis()), new Date(System.currentTimeMillis()));
+    @Deprecated
+    public List<BlackList> getBlackList() {//废弃
         java.util.Date date = DateUtils.addMonths(new java.util.Date(System.currentTimeMillis()), -1);
         return blackListDao.findAllByStatusAndStartDateAfter("2", new Date(date.getTime()));
+    }
+
+    //改进后的黑名单
+    public List<BlackList> getBlackList(String userCode) {
+        return commonsMapper.getBlackList(userCode);
     }
 
     public TianYanChaJson getLocalJson(String id,String name, String jsonFlag) {

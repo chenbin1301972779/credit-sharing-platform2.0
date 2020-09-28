@@ -4,8 +4,8 @@ server:
 spring:
   datasource:
     driver-class-name: oracle.jdbc.driver.OracleDriver
-#    url: jdbc:oracle:thin:@10.0.130.27:1521:orcl
-    url: jdbc:oracle:thin:@10.0.119.2:1521:orcl
+    url: jdbc:oracle:thin:@10.0.130.27:1521:orcl
+#    url: jdbc:oracle:thin:@10.0.119.2:1521:orcl
     username: biuser
     password: GMfr2020
 
@@ -32,7 +32,13 @@ spring:
         max-idle: 5
         min-idel: 0
     timeout: 10000
-#mybatis:
+mybatis:
 #  # spring boot集成mybatis的方式打印sql
 #  configuration:
 #    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  mapper-locations: classpath:mapping/*Mapper.xml
+
+platform:
+  es:
+    host: 10.0.105.4
+    port: 9200

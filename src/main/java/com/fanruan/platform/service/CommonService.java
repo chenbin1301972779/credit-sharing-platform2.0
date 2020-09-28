@@ -154,7 +154,7 @@ public class CommonService {
          if(StringUtils.equals("admin",operator)){
              userCompany = commonMapper.getAllUserCompany();
          }else {
-             userCompany = commonMapper.getUserCompany(operator);
+             userCompany = commonsMapper.getUserCompany(operator);
          }
         return userCompany;
     }

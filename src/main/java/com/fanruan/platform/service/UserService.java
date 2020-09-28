@@ -7,6 +7,7 @@ import com.fanruan.platform.constant.CommonUtils;
 import com.fanruan.platform.dao.*;
 import com.fanruan.platform.mapper.CommonMapper;
 import com.fanruan.platform.mapper.UserMapper;
+import com.fanruan.platform.mapper.UsersMapper;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -50,6 +51,9 @@ public class UserService {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private UsersMapper usersMapper;
 
 
     public UserFocus saveRelation(HashMap<String, Object> hs, Integer userId, Integer companyId, Map<String, Integer> relations) {
@@ -487,10 +491,10 @@ public class UserService {
     }
 
     public HashMap<String,Object> searchSubAdminUserListNew(HashMap<String, Object> hs, Integer pageIndex, Integer pageSize, String username, String name, Integer status, Integer isSubAdmin, String operator) {
-        Integer totalRecords = userMapper.getSubUserListCount(pageIndex, pageSize, username, name, status, isSubAdmin, operator);
+        Integer totalRecords = usersMapper.getSubUserListCount(pageIndex, pageSize, username, name, status, isSubAdmin, operator);
         hs.put("totalRecords",totalRecords);
         hs.put("totalPages",Math.ceil(totalRecords/pageSize));
-        List<User> userList = userMapper.getSubUserList(hs, pageIndex, pageSize, username, name, status,  isSubAdmin, operator);
+        List<User> userList = usersMapper.getSubUserList(hs, pageIndex, pageSize, username, name, status,  isSubAdmin, operator);
         hs.put("userList",userList);
         hs.put("code",0);
         return hs;

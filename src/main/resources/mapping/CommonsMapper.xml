@@ -52,5 +52,45 @@
         )
     </select>
 
+    <resultMap id="getUserCompanyResultMap" type="com.fanruan.platform.bean.UserCompany">
+        <result column="CODE" jdbcType="VARCHAR" property="code" />
+        <result column="NAME" jdbcType="VARCHAR" property="name" />
+    </resultMap>
+
+    <select id="getUserCompany" resultType="com.fanruan.platform.bean.UserCompany">
+        with ds1 as(
+            SELECT CODE,NAME,SCODE,SNAME FROM BIUSER.ODS_HR_ORG
+            UNION
+            SELECT CODE,NAME,SCODE,SNAME FROM BIUSER.INPUT_HR_ORG
+            WHERE ENABLESTATE=1
+        )
+        SELECT CODE,NAME --自身
+        FROM ds1 A
+        WHERE  CODE=(SELECT COMPANY_CODE FROM CREDIT_USER WHERE USERNAME=#{username})
+        UNION ALL
+        SELECT CODE,NAME --下级公司
+        FROM ds1 A
+        WHERE SCODE=(SELECT COMPANY_CODE FROM CREDIT_USER WHERE USERNAME=#{username})
+        UNION ALL
+        SELECT B.CODE,B.NAME --下下级公司
+        FROM ds1 A
+                 INNER JOIN ds1 B ON A.CODE=B.SCODE
+        WHERE A.SCODE=(SELECT COMPANY_CODE FROM CREDIT_USER WHERE USERNAME=#{username})
+        UNION ALL
+        SELECT C.CODE,C.NAME --下下下级公司
+        FROM ds1 A
+                 INNER JOIN ds1 B ON A.CODE=B.SCODE
+                 INNER JOIN ds1 C ON B.CODE=C.SCODE
+        WHERE A.SCODE=(SELECT COMPANY_CODE FROM CREDIT_USER WHERE USERNAME=#{username})
+        UNION ALL
+        SELECT D.CODE,D.NAME --下下下下级公司
+        FROM ds1 A
+                 INNER JOIN ds1 B ON A.CODE=B.SCODE
+                 INNER JOIN ds1 C ON B.CODE=C.SCODE
+                 INNER JOIN ds1 D ON C.CODE=D.SCODE
+        WHERE A.SCODE=(SELECT COMPANY_CODE FROM CREDIT_USER WHERE USERNAME=#{username})
+        order by code
+    </select>
+
 </mapper>
 

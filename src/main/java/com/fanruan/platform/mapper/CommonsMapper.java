@@ -1,6 +1,8 @@
 package com.fanruan.platform.mapper;
 
 import com.fanruan.platform.bean.BlackList;
+import com.fanruan.platform.bean.UserCompany;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -14,5 +16,8 @@ import java.util.List;
  */
 @Repository
 public interface CommonsMapper {
+    /**黑名单*/
     List<BlackList> getBlackList(String userCode);
+    /**子管理员获取可选公司*/
+    public List<UserCompany> getUserCompany(String username);
 }

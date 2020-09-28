@@ -38,7 +38,7 @@ public interface UserMapper {
             "t.newcompany_flag as newcompanyFlag,\n" +
             "F_GET_PERMISSION_BY_USERID(t.user_id) as permissionRoles,\n" +
             "CASE \n" +
-            "  WHEN INSTR(F_GET_PERMISSION_BY_USERID(t.user_id),('sub_admin')) > 0 THEN\n" +
+            "  WHEN INSTR(F_GET_PERMISSION_BY_USERID(t.user_id),('sub_admin')) &gt; 0 THEN\n" +
             "    1\n" +
             "  ELSE \n" +
             "    0\n" +
@@ -106,7 +106,7 @@ public interface UserMapper {
                     "t.newcompany_flag as newcompanyFlag,\n" +
                     "F_GET_PERMISSION_BY_USERID(t.user_id) as permissionRoles,\n" +
                     "CASE \n" +
-                    "  WHEN INSTR(F_GET_PERMISSION_BY_USERID(t.user_id),('sub_admin')) > 0 THEN\n" +
+                    "  WHEN INSTR(F_GET_PERMISSION_BY_USERID(t.user_id),('sub_admin')) &gt; 0 THEN\n" +
                     "    1\n" +
                     "  ELSE \n" +
                     "    0\n" +
@@ -159,7 +159,7 @@ public interface UserMapper {
                     "t.newcompany_flag as newcompanyFlag,\n" +
                     "F_GET_PERMISSION_BY_USERID(t.user_id) as permissionRoles,\n" +
                     "CASE \n" +
-                    "  WHEN INSTR(F_GET_PERMISSION_BY_USERID(t.user_id),('sub_admin')) > 0 THEN\n" +
+                    "  WHEN INSTR(F_GET_PERMISSION_BY_USERID(t.user_id),('sub_admin')) &gt; 0 THEN\n" +
                     "    1\n" +
                     "  ELSE \n" +
                     "    0\n" +
@@ -255,7 +255,7 @@ public interface UserMapper {
                     "t.newcompany_flag as newcompanyFlag,\n" +
                     "F_GET_PERMISSION_BY_USERID(t.user_id) as permissionRoles,\n" +
                     "CASE \n" +
-                    "  WHEN INSTR(F_GET_PERMISSION_BY_USERID(t.user_id),('sub_admin')) > 0 THEN\n" +
+                    "  WHEN INSTR(F_GET_PERMISSION_BY_USERID(t.user_id),('sub_admin')) &gt; 0 THEN\n" +
                     "    1\n" +
                     "  ELSE \n" +
                     "    0\n" +

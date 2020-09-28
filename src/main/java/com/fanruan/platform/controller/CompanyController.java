@@ -1,0 +1,364 @@
+package com.fanruan.platform.controller;
+
+import com.fanruan.platform.bean.*;
+import com.fanruan.platform.constant.CommonUtils;
+import com.fanruan.platform.htmlToPdf.HtmlToPdfUtils;
+import com.fanruan.platform.mapper.PdfMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
+import com.fanruan.platform.service.UserService;
+import com.fanruan.platform.service.CompanyService;
+import com.sinosure.exchange.edi.po.ArrayOfEdiFeedback;
+import com.sinosure.exchange.edi.po.ArrayOfEntrustInput;
+import com.sinosure.exchange.edi.po.EdiFeedback;
+import com.sinosure.exchange.edi.po.EntrustInput;
+import com.sinosure.exchange.edi.service.EdiException_Exception;
+import com.sinosure.exchange.edi.service.SolEdiProxyWebService;
+import com.sinosure.exchange.edi.service.SolEdiProxyWebServicePortType;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import org.springframework.util.CollectionUtils;
+import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
+import javax.xml.bind.JAXBElement;
+import javax.xml.namespace.QName;
+import java.io.*;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+@RestController
+public class CompanyController {
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private CompanyService companyService;
+
+    @Autowired
+    private Environment environment;
+
+    @Autowired
+    private PdfMapper pdfMapper;
+
+
+    @RequestMapping(value = "/company/getRiskInfo", method = RequestMethod.POST)
+    @ResponseBody
+    public String getRiskInfo(@RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String,Object> hs=new HashMap<>();
+        String riskSource = (String) param.get("riskSource");
+        List<RiskInfo> riskInfoList =  companyService.findLatestRisk(riskSource);
+        ObjectMapper objectMapper=new ObjectMapper();
+        hs.put("riskInfoList",riskInfoList);
+        return objectMapper.writeValueAsString(hs);
+    }
+
+    @RequestMapping(value = "/company/searchList", method = RequestMethod.POST)
+    @ResponseBody
+    public String searchCompany(@RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String,Object> hs=new HashMap<>();
+        String keyword = StringUtils.trim((String) param.get("keyword"));
+        Integer userId = CommonUtils.getIntegerValue(param.get("userId"));
+        Integer page = CommonUtils.getIntegerValue(param.get("page"));
+        List<Company> companyList =  companyService.searchList(userId,hs,keyword,page);
+        ObjectMapper objectMapper=new ObjectMapper();
+        hs.put("searchList",companyList);
+        return objectMapper.writeValueAsString(hs);
+    }
+    @RequestMapping(value = "/company/direct/searchList", method = RequestMethod.POST)
+    @ResponseBody
+    public String directSearchCompany(@RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String,Object> hs=new HashMap<>();
+        String keyword = StringUtils.trim((String) param.get("keyword"));
+        Integer userId = CommonUtils.getIntegerValue(param.get("userId"));
+        Integer page = CommonUtils.getIntegerValue(param.get("page"));
+        List<Company> companyList = Lists.newArrayList();
+        if(userId!=null){
+            companyList =  companyService.directSearchList(userId,keyword,page);
+        }
+        ObjectMapper objectMapper=new ObjectMapper();
+        hs.put("searchList",companyList);
+        hs.put("sourceType","模糊查询接口");
+        return objectMapper.writeValueAsString(hs);
+    }
+
+
+
+    @RequestMapping(value = "/company/latestWords", method = RequestMethod.POST)
+    @ResponseBody
+    public String getLatestWords(@RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String,Object> hs=new HashMap<>();
+        Integer limit = CommonUtils.getIntegerValue(param.get("limit"));
+        Integer userId = CommonUtils.getIntegerValue(param.get("userId"));
+        if(limit==null){
+            limit = 5;
+        }
+        List<SearchWords> SearchWordsList =  companyService.getLatestWords(userId,limit);
+        ObjectMapper objectMapper = new ObjectMapper();
+        hs.put("latestWords",SearchWordsList);
+        return objectMapper.writeValueAsString(hs);
+    }
+
+    @RequestMapping(value = "/company/detail", method = RequestMethod.POST)
+    @ResponseBody
+    public String getDetail( @RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String,Object> hs=new HashMap<>();
+        List<CompanyExtendInfo> companyList =  companyService.searchDetailList(param);
+        ObjectMapper objectMapper=new ObjectMapper();
+        hs.put("searchList",companyList);
+        return objectMapper.writeValueAsString(hs);
+    }
+
+    @RequestMapping(value = "/company/getBaseInfo", method = RequestMethod.POST)
+    @ResponseBody
+    public String getBaseInfo( @RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String,Object> hs=new HashMap<>();
+        Integer companyId = CommonUtils.getIntegerValue(param.get("companyId"));
+        ObjectMapper objectMapper=new ObjectMapper();
+        if(companyId==null){
+            hs.put("code","1");
+            hs.put("msg","查询公司基本信息失败，companyId为空");
+        }else {
+            TianYanChaInfo tianYanChaInfo =  companyService.getTianYanChaInfo(companyId);
+            if(tianYanChaInfo==null){
+                hs.put("code","2");
+                hs.put("msg","查询公司基本信息失败");
+            }else {
+                hs.put("baseInfo",tianYanChaInfo);
+                hs.put("code","0");
+                hs.put("msg","");
+            }
+        }
+        return objectMapper.writeValueAsString(hs);
+    }
+
+    @RequestMapping(value = "/company/zhongxinbao", method = RequestMethod.POST)
+    @ResponseBody
+    public String getZhongXinbao( @RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String,Object> hs=new HashMap<>();
+        Integer userId = CommonUtils.getIntegerValue(param.get("userId")) ;
+        User user = userService.getUserById(userId);
+        ArrayOfEntrustInput arrayOfEntrustInput = new ArrayOfEntrustInput();
+        EntrustInput entrustInput = new EntrustInput();
+        buildEntrustInput(arrayOfEntrustInput, entrustInput,param);
+        URL wsdlURL = SolEdiProxyWebService.WSDL_LOCATION;
+        QName SERVICE_NAME = new QName("http://service.edi.exchange.sinosure.com", "SolEdiProxyWebService");
+        SolEdiProxyWebService ss = new SolEdiProxyWebService(wsdlURL,SERVICE_NAME);
+        SolEdiProxyWebServicePortType port = ss.getSolEdiProxyWebServiceHttpPort();
+        try {
+            ArrayOfEdiFeedback arrayOfEdiFeedback = port.doEdiCreditReportInput(arrayOfEntrustInput);
+            List<EdiFeedback> ediFeedback = arrayOfEdiFeedback.getEdiFeedback();
+            for(EdiFeedback e:ediFeedback){
+                String returnMsg = e.getReturnMsg().getValue();
+                String returnCode = e.getReturnCode().getValue();
+                hs.put("returnMsg",returnMsg);
+                hs.put("returnCode",returnCode);
+                companyService.saveZhongXinBaoLog(user,e,entrustInput);
+                companyService.saveReportPushInfo(user,entrustInput);
+            }
+        } catch (EdiException_Exception e) {
+            e.printStackTrace();
+            hs.put("returnCode",-1);
+            hs.put("returnMsg","调用中信保接口失败，请确认参数");
+        }
+
+        ObjectMapper objectMapper=new ObjectMapper();
+        return objectMapper.writeValueAsString(hs);
+    }
+
+
+    @RequestMapping(value = "/company/getCodeInfo", method = RequestMethod.POST)
+    @ResponseBody
+    public String getCodeInfo( @RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String,Object> hs=new HashMap<>();
+        Integer userId = CommonUtils.getIntegerValue(param.get("userId")) ;
+        Integer companyId = CommonUtils.getIntegerValue(param.get("companyId")) ;
+        ZhongXinBaoLog log = null;
+        if(userId!=null&&companyId!=null){
+            log  = companyService.getCodeInfo(userId,companyId);
+        }
+        ObjectMapper objectMapper=new ObjectMapper();
+        hs.put("code",0);
+        hs.put("codeInfo",log);
+        hs.put("msg","");
+        return objectMapper.writeValueAsString(hs);
+    }
+
+    @RequestMapping(value = "/company/zhongxinbao/getShareInfo", method = RequestMethod.POST)
+    @ResponseBody
+    public String getShareInfo( @RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String,Object> hs=new HashMap<>();
+        ObjectMapper objectMapper=new ObjectMapper();
+        Integer companyId = CommonUtils.getIntegerValue(param.get("companyId")) ;
+        List<ZhongXinBaoShare> shareInfoList = companyService.getShareInfo(companyId);
+        if(shareInfoList==null){
+            hs.put("code",1);
+            hs.put("shareInfo",null);
+            hs.put("msg","查询不到股票信息或者参数有误");
+        }
+        hs.put("code",0);
+        hs.put("shareInfo",shareInfoList);
+        hs.put("msg","");
+        return objectMapper.writeValueAsString(hs);
+    }
+
+    @RequestMapping(value = "/company/zhongxinbao/getBusinessInfo", method = RequestMethod.POST)
+    @ResponseBody
+    public String getBusinessInfo( @RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String,Object> hs=new HashMap<>();
+        ObjectMapper objectMapper=new ObjectMapper();
+        Integer companyId = CommonUtils.getIntegerValue(param.get("companyId")) ;
+        ZhongXinBaoInfo zhongXinBaoInfo = companyService.getBusinessInfo(companyId);
+        if(zhongXinBaoInfo==null){
+            hs.put("code",1);
+            hs.put("businessInfo",zhongXinBaoInfo);
+            hs.put("msg","查询不到基本信息或者参数有误");
+        }else {
+            hs.put("code",0);
+            hs.put("shareInfo",zhongXinBaoInfo);
+            hs.put("msg","");
+        }
+        return objectMapper.writeValueAsString(hs);
+    }
+
+
+    private void buildEntrustInput(ArrayOfEntrustInput arrayOfEntrustInput, EntrustInput entrustInput, Map<String, Object> param) {
+
+        String reportbuyerNo = (String) param.get("reportbuyerNo");
+        String clientNo = (String) param.get("clientNo");
+//        String corpSerialNo = (String) param.get("corpSerialNo");
+        String  corpSerialNo = CommonUtils.getRandomCode();
+
+        entrustInput.setCorpSerialNo(getJAXBElement("corpSerialNo",corpSerialNo));
+        entrustInput.setClientNo(getJAXBElement("clientNo",clientNo));
+        if(StringUtils.isBlank(reportbuyerNo)){
+            String reportCorpCountryCode = (String) param.get("reportCorpCountryCode");
+            String reportCorpChnName = (String) param.get("reportCorpChnName");
+            String reportCorpEngName = (String) param.get("reportCorpEngName");
+            String reportCorpaddress = (String) param.get("reportCorpaddress");
+            String istranslation = String.valueOf(CommonUtils.getIntegerValue(param.get("istranslation"))) ;
+
+            entrustInput.setReportCorpCountryCode(getJAXBElement("reportCorpCountryCode",reportCorpCountryCode));
+            entrustInput.setReportCorpChnName(getJAXBElement("reportCorpChnName",reportCorpChnName));
+            entrustInput.setReportCorpEngName(getJAXBElement("reportCorpEngName",reportCorpEngName));
+            entrustInput.setReportCorpaddress(getJAXBElement("reportCorpaddress",reportCorpaddress));
+            entrustInput.setIstranslation(getJAXBElement("istranslation",istranslation));
+            entrustInput.setIstranslation(getJAXBElement("clientno",clientNo));
+        }else{
+            entrustInput.setReportbuyerNo(getJAXBElement("reportbuyerNo",reportbuyerNo));
+            String istranslation = String.valueOf(CommonUtils.getIntegerValue(param.get("istranslation"))) ;
+            entrustInput.setIstranslation(getJAXBElement("istranslation",istranslation));
+        }
+        arrayOfEntrustInput.getEntrustInput().add(entrustInput);
+    }
+
+
+
+    private JAXBElement<String> getJAXBElement(String filedName, String fieldValue) {
+        QName corpSerialNo_NAME = new QName("http://po.edi.exchange.sinosure.com", filedName);
+        return new JAXBElement<String>(corpSerialNo_NAME, String.class, fieldValue);
+    }
+
+    @RequestMapping(value = "/company/getPDFList", method = RequestMethod.POST)
+    @ResponseBody
+    public String getPDFList( @RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String,Object> hs=new HashMap<>();
+        ObjectMapper objectMapper=new ObjectMapper();
+        Integer companyId = CommonUtils.getIntegerValue(param.get("companyId")) ;
+        Company company = companyService.getCompanyById(companyId);
+        if(company==null||StringUtils.isBlank(company.getCompanyName())){
+            hs.put("code","2");
+            hs.put("msg","未查询到公司或者公司名为空");
+            return objectMapper.writeValueAsString(hs);
+        }
+        List<ZhongXinBaoPDF> zhongXinBaoPDFS = pdfMapper.selectZhongXinBaoPDF(company.getCompanyName());
+        if(CollectionUtils.isEmpty(zhongXinBaoPDFS)){
+            hs.put("code","3");
+            hs.put("msg","服务器上未查询到该公司pdf文件");
+            return objectMapper.writeValueAsString(hs);
+        }
+        hs.put("code","0");
+        hs.put("msg","");
+        hs.put("pdfList",zhongXinBaoPDFS);
+        return objectMapper.writeValueAsString(hs);
+    }
+
+    /**
+     * 获取所有信保报告
+     * @param param
+     * @return
+     * @throws JsonProcessingException
+     */
+    @RequestMapping(value = "/company/getPDFListAll", method = RequestMethod.POST)
+    @ResponseBody
+    public String getPDFListAll( @RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String,Object> hs=new HashMap<>();
+        ObjectMapper objectMapper=new ObjectMapper();
+        String companyName = param.get("companyName")!=null?param.get("companyName").toString():"";
+        String xcode = param.get("xcode")!=null?param.get("xcode").toString():"";
+        Integer page = CommonUtils.getIntegerValue(param.get("pageIndex")) ;
+        Integer pageSize = CommonUtils.getIntegerValue(param.get("pageSize")) ;
+        Integer total = pdfMapper.selectZhongXinBaoPDFListCount(xcode,companyName);
+        List<ZhongXinBaoPDFList> zhongXinBaoPDFS = pdfMapper.selectZhongXinBaoPDFList(xcode,companyName,pageSize,page);
+        if(CollectionUtils.isEmpty(zhongXinBaoPDFS)){
+            hs.put("code","3");
+            hs.put("msg","服务器上未查询到pdf文件");
+            return objectMapper.writeValueAsString(hs);
+        }
+        hs.put("code","0");
+        hs.put("msg","");
+        hs.put("pdfList",zhongXinBaoPDFS);
+        hs.put("totalRecords",total);
+        return objectMapper.writeValueAsString(hs);
+    }
+
+
+    @RequestMapping(value = "/company/getPDF", method = RequestMethod.POST)
+    @ResponseBody
+    public String getPDF(HttpServletResponse response, @RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String,Object> hs=new HashMap<>();
+        ObjectMapper objectMapper=new ObjectMapper();
+        String noticeSerialno = (String)param.get("noticeSerialno") ;
+        String filePath = "/home/ftpuser/";
+        String fileName = noticeSerialno;
+        File file = new File(filePath+fileName);
+        try {
+            //加载文件
+            InputStream is = new BufferedInputStream(new FileInputStream(file));
+            response.addHeader("Content-Disposition", "attachment;filename=" + new String(fileName.getBytes("UTF-8"), "ISO-8859-1"));
+            ServletOutputStream outputStream = response.getOutputStream();
+            response.setContentType("application/octet-stream");
+            IOUtils.copy(is,outputStream,1024);
+            hs.put("code","0");
+        } catch (Exception e) {
+            e.printStackTrace();
+            hs.put("code","1");
+            hs.put("msg","文件下载出错");
+        }
+        return objectMapper.writeValueAsString(hs);
+    }
+
+    @RequestMapping(value = "/company/getNewCompany", method = RequestMethod.POST)
+    @ResponseBody
+    public String getNewCompany( @RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String,Object> hs=new HashMap<>();
+        List<NewCompany> newCompanys = companyService.getNewCompany();
+        ObjectMapper objectMapper=new ObjectMapper();
+        hs.put("code",0);
+        hs.put("newCompany",newCompanys);
+        hs.put("msg","");
+        return objectMapper.writeValueAsString(hs);
+    }
+
+
+
+
+}

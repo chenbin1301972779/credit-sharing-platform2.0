@@ -151,11 +151,11 @@ public class CommonService {
             return null;
         }
         List<UserCompany> userCompany = null;
-         if(StringUtils.equals("admin",operator)){
-             userCompany = commonMapper.getAllUserCompany();
-         }else {
+//         if(StringUtils.equals("admin",operator)){
+//             userCompany = commonMapper.getAllUserCompany();
+//         }else {
              userCompany = commonsMapper.getUserCompany(operator);
-         }
+//         }
         return userCompany;
     }
 

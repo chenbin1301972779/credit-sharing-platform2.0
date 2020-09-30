@@ -47,10 +47,10 @@
         0
         END as isSubAdmin
         FROM CREDIT_USER T
-        WHERE username &lt;&gt; '80015868'
+        WHERE username &lt;&gt; 'admin'
         AND company_code in (
         SELECT CODE --自身
-        FROM BIUSER.ODS_HR_ORG A
+        FROM ds1 A
         WHERE  CODE=(SELECT COMPANY_CODE FROM CREDIT_USER WHERE USERNAME=#{operator})
         UNION ALL
         SELECT CODE --下级公司
@@ -59,20 +59,20 @@
         UNION ALL
         SELECT B.CODE --下下级公司
         FROM ds1 A
-        INNER JOIN BIUSER.ODS_HR_ORG B ON A.CODE=B.SCODE
+        INNER JOIN ds1 B ON A.CODE=B.SCODE
         WHERE A.SCODE=(SELECT COMPANY_CODE FROM CREDIT_USER WHERE USERNAME=#{operator})
         UNION ALL
         SELECT C.CODE --下下下级公司
         FROM ds1 A
-        INNER JOIN BIUSER.ODS_HR_ORG B ON A.CODE=B.SCODE
-        INNER JOIN BIUSER.ODS_HR_ORG C ON B.CODE=C.SCODE
+        INNER JOIN ds1 B ON A.CODE=B.SCODE
+        INNER JOIN ds1 C ON B.CODE=C.SCODE
         WHERE A.SCODE=(SELECT COMPANY_CODE FROM CREDIT_USER WHERE USERNAME=#{operator})
         UNION ALL
         SELECT D.CODE --下下下下级公司
         FROM ds1 A
-        INNER JOIN BIUSER.ODS_HR_ORG B ON A.CODE=B.SCODE
-        INNER JOIN BIUSER.ODS_HR_ORG C ON B.CODE=C.SCODE
-        INNER JOIN BIUSER.ODS_HR_ORG D ON C.CODE=D.SCODE
+        INNER JOIN ds1 B ON A.CODE=B.SCODE
+        INNER JOIN ds1 C ON B.CODE=C.SCODE
+        INNER JOIN ds1 D ON C.CODE=D.SCODE
         WHERE A.SCODE=(SELECT COMPANY_CODE FROM CREDIT_USER WHERE USERNAME=#{operator})
         )
         <if test="name != null and name!=''">
@@ -97,7 +97,7 @@
         </if>
         AND rowno &lt;= #{pageIndex} * #{pageSize}
         AND rowno &gt; (#{pageIndex}-1) * #{pageSize}
-</select>
+    </select>
 
     <resultMap id="getSubUserListCountResultMap" type="java.lang.Integer">
         <result column="co" jdbcType="VARCHAR" property="co" />
@@ -134,30 +134,30 @@
         FROM CREDIT_USER T
         WHERE username &lt;&gt; 'admin'
         AND company_code in (
-        SELECT CODE
+        SELECT CODE --自身
         FROM ds1 A
         WHERE  CODE=(SELECT COMPANY_CODE FROM CREDIT_USER WHERE USERNAME=#{operator})
         UNION ALL
-        SELECT CODE
+        SELECT CODE --下级公司
         FROM ds1 A
         WHERE SCODE=(SELECT COMPANY_CODE FROM CREDIT_USER WHERE USERNAME=#{operator})
         UNION ALL
-        SELECT B.CODE
+        SELECT B.CODE --下下级公司
         FROM ds1 A
-        INNER JOIN BIUSER.ODS_HR_ORG B ON A.CODE=B.SCODE
+        INNER JOIN ds1 B ON A.CODE=B.SCODE
         WHERE A.SCODE=(SELECT COMPANY_CODE FROM CREDIT_USER WHERE USERNAME=#{operator})
         UNION ALL
-        SELECT C.CODE
+        SELECT C.CODE --下下下级公司
         FROM ds1 A
-        INNER JOIN BIUSER.ODS_HR_ORG B ON A.CODE=B.SCODE
-        INNER JOIN BIUSER.ODS_HR_ORG C ON B.CODE=C.SCODE
+        INNER JOIN ds1 B ON A.CODE=B.SCODE
+        INNER JOIN ds1 C ON B.CODE=C.SCODE
         WHERE A.SCODE=(SELECT COMPANY_CODE FROM CREDIT_USER WHERE USERNAME=#{operator})
         UNION ALL
-        SELECT D.CODE
+        SELECT D.CODE --下下下下级公司
         FROM ds1 A
-        INNER JOIN BIUSER.ODS_HR_ORG B ON A.CODE=B.SCODE
-        INNER JOIN BIUSER.ODS_HR_ORG C ON B.CODE=C.SCODE
-        INNER JOIN BIUSER.ODS_HR_ORG D ON C.CODE=D.SCODE
+        INNER JOIN ds1 B ON A.CODE=B.SCODE
+        INNER JOIN ds1 C ON B.CODE=C.SCODE
+        INNER JOIN ds1 D ON C.CODE=D.SCODE
         WHERE A.SCODE=(SELECT COMPANY_CODE FROM CREDIT_USER WHERE USERNAME=#{operator})
         )
         <if test="name != null and name!=''">
@@ -175,6 +175,183 @@
             and (M.isSubAdmin = #{isSubAdmin} )
         </if>
     </select>
+
+    <insert id="insertStep1" parameterType="com.fanruan.platform.bean.User"  >
+        --门户用户表
+        INSERT INTO FINEDB1.FINE_USER (
+            ID,
+            CREATIONTYPE,
+            EMAIL,
+            ENABLE,
+            LASTOPERATIONTYPE,
+            MALE,
+            MOBILE,
+            PASSWORD,
+            USERNAME,
+            REALNAME
+        ) SELECT
+              LOWER (SYS_GUID()) AS ID,
+              1 AS CREATIONTYPE,
+              #{email,jdbcType=VARCHAR} AS EMAIL,
+              1 AS ENABLE,
+              1 AS LASTOPERATIONTYPE,
+              1 AS MALE,
+              #{mobile,jdbcType=VARCHAR} AS MOBILE,
+              '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92' AS PASSWORD,
+              #{username} AS USERNAME,
+              #{name} AS REALNAME
+            FROM
+              dual
+            WHERE
+                #{username} NOT IN (
+                SELECT DISTINCT
+                  username
+                FROM
+                  FINEDB1.FINE_USER
+              )
+    </insert>
+    <insert id="insertStep2" parameterType="com.fanruan.platform.bean.User"  >
+        --门户-用户角色中间表
+        INSERT
+            WHEN NOT EXISTS (
+        SELECT
+            userid
+        FROM
+            FINEDB1.FINE_USER_ROLE_MIDDLE
+        WHERE
+                userid = (
+                SELECT
+                    ID
+                FROM
+                    FINEDB1.FINE_USER
+                WHERE
+                    USERNAME = #{username}
+            )
+            ) THEN
+        INTO FINEDB1.FINE_USER_ROLE_MIDDLE (ID, ROLEID, ROLETYPE, USERID) SELECT
+                                                                              LOWER (SYS_GUID()) AS ID,
+                                                                              '4f056455-ae4d-4374-a4b6-9e27b1d8892c' AS roleId,
+                                                                              2 AS roleType,
+                                                                              ID AS USERid
+                                                                          FROM
+                                                                              FINEDB1.FINE_USER
+                                                                          WHERE
+                                                                              USERname = #{username}
+    </insert>
+    <insert id="insertStep3" parameterType="com.fanruan.platform.bean.User"  >
+        --门户-成员公司表
+        INSERT INTO FINEDB1.FINE_POST (
+            ID,
+            CREATIONTYPE,
+            ENABLE,
+            LASTOPERATIONTYPE,
+            NAME
+        ) SELECT
+              LOWER (SYS_GUID()) AS ID,
+              1 AS CREATIONTYPE,
+              1 AS ENABLE,
+              1 AS LASTOPERATIONTYPE,
+              #{companyName} AS NAME
+        FROM
+          dual
+        WHERE
+          #{companyName} NOT IN (
+            SELECT DISTINCT
+              NAME
+            FROM
+              FINEDB1.FINE_POST
+          )
+    </insert>
+    <insert id="insertStep4" parameterType="com.fanruan.platform.bean.User"  >
+        --门户-成员公司二级公司中间表
+        INSERT
+            WHEN NOT EXISTS (
+        SELECT
+            ID
+        FROM
+            FINEDB1.FINE_DEP_ROLE
+        WHERE
+                postid in (
+                SELECT
+                    POSTID
+                FROM
+                    FINEDB1.FINE_DEP_ROLE a left JOIN
+                    FINEDB1.FINE_POST b on a.POSTID = b.ID
+                where
+                    a.DEPARTMENTID = '20932798-1323-4a2b-b84a-dbe7a906335d'
+                  and
+                    b.name = #{companyName}
+            )
+            ) THEN
+        INTO FINEDB1.FINE_DEP_ROLE (
+            ID,
+            CREATIONTYPE,
+            DEPARTMENTID,
+            LASTOPERATIONTYPE,
+            postid
+        ) SELECT
+              LOWER (SYS_GUID()) AS ID,
+              1 AS CREATIONTYPE,
+              '20932798-1323-4a2b-b84a-dbe7a906335d' AS DEPARTMENTID,
+              1 AS LASTOPERATIONTYPE,
+              ID AS postid
+          FROM
+              FINEDB1.FINE_POST
+          WHERE
+              NAME = #{companyName}
+    </insert>
+    <insert id="insertStep5" parameterType="com.fanruan.platform.bean.User"  >
+        --门户-用户部门中间表
+        INSERT
+            WHEN NOT EXISTS (
+        SELECT
+            ID
+        FROM
+            FINEDB1.FINE_USER_ROLE_MIDDLE
+        WHERE
+                USERID = (
+                SELECT
+                    ID
+                FROM
+                    FINEDB1.FINE_USER
+                WHERE
+                    userNAME = #{username}
+            )
+          and ROLEID in (
+            SELECT DISTINCT
+                b. ID AS ROLEID
+            FROM
+                FINEDB1.FINE_POST A
+                    LEFT JOIN FINEDB1.FINE_DEP_ROLE b ON A . ID = b.postid
+            WHERE
+                NAME = #{companyName}
+        )
+            ) THEN
+        INTO FINEDB1.FINE_USER_ROLE_MIDDLE (ID, ROLEID, ROLETYPE, USERID) SELECT
+                                                                              LOWER (SYS_GUID()) AS ID,
+                                                                              (
+                                                                                  SELECT DISTINCT
+                                                                                      b.ID AS ROLEID
+                                                                                  FROM
+                                                                                      FINEDB1.FINE_POST A
+                                                                                          LEFT JOIN FINEDB1.FINE_DEP_ROLE b ON A . ID = b.postid
+                                                                                          LEFT JOIN FINEDB1.FINE_USER_ROLE_MIDDLE d on b.id=d.roleid
+                                                                                          LEFT JOIN FINEDB1.FINE_USER c on d.userid=c.id
+                                                                                  where
+                                                                                      a.NAME = #{companyName} and b.DEPARTMENTID = '20932798-1323-4a2b-b84a-dbe7a906335d'
+                                                                              ),
+                                                                              1,
+                                                                              (
+                                                                                  SELECT DISTINCT
+                                                                                      ID AS USERID
+                                                                                  FROM
+                                                                                      FINEDB1.FINE_USER
+                                                                                  WHERE
+                                                                                      username = #{username}
+                                                                              )
+                                                                          FROM
+                                                                              dual
+    </insert>
 
 </mapper>
 

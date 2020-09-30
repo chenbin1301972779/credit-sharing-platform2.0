@@ -15,18 +15,20 @@ import java.util.List;
  */
 @Repository
 public interface UsersMapper {
-    public List<User> getSubUserList(HashMap<String, Object> hs, Integer pageIndex,
-                                     Integer pageSize,
-                                     String username,
-                                     String name,
-                                     Integer status,
-                                     Integer isSubAdmin,
-                                     String operator);
-    public Integer getSubUserListCount(Integer pageIndex,
-                                       Integer pageSize,
-                                       String username,
-                                       String name,
-                                       Integer status,
-                                       Integer isSubAdmin,
-                                       String operator);
+    /**子管理员查询用户*/
+    List<User> getSubUserList(HashMap<String, Object> hs, Integer pageIndex,Integer pageSize,
+                              String username,String name,Integer status,Integer isSubAdmin,String operator);
+    /**子管理员查询用户-记录数*/
+    Integer getSubUserListCount(Integer pageIndex,Integer pageSize,
+                                String username,String name,Integer status,Integer isSubAdmin,String operator);
+    /**门户用户表*/
+    Integer insertStep1(User user);
+    /**门户-用户角色中间表*/
+    Integer insertStep2(User user);
+    /**门户-成员公司表*/
+    Integer insertStep3(User user);
+    /**门户-成员公司二级公司中间表*/
+    Integer insertStep4(User user);
+    /**门户-用户部门中间表*/
+    Integer insertStep5(User user);
 }

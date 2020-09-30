@@ -171,13 +171,16 @@ public class UserService {
     }
 
     public User updateUser(String operator, Integer userId, Map<String, Object> para) {
+        boolean isNew = false;
         User user = null;
         if(userId!=null){
             Optional<User> userOptional = userDao.findById(userId);
             user = CommonUtils.getUserValue(userOptional);
-        }else {
+        }else {//为新增用户
             user = new User();
             user.setStatus(1);
+            //同步到FR
+            isNew = true;
         }
         if(user!=null){
             Integer status = CommonUtils.getIntegerValue(para.get("status"));
@@ -218,19 +221,31 @@ public class UserService {
             if(StringUtils.isNotBlank(password)){
                 user.setPassword(password);
             }
-            if(StringUtils.isNotBlank(mobile)){
+            if(mobile!=null){
                 user.setMobile(mobile);
             }
 
-            if(StringUtils.isNotBlank(email)){
+            if(email!=null){
                 user.setEmail(email);
             }
             User result = userDao.saveAndFlush(user);
+            if(isNew){//新增用户同步到FR
+                insertUserToFr(user);
+            }
             updatePermission(operator, result.getUserId(), permissionRoles);
             result.setPermissionRoles(permissionRoles);
             return result;
         }
         return null;
+    }
+
+    private boolean insertUserToFr(User user){
+        Integer f1 = usersMapper.insertStep1(user);
+        Integer f2 = usersMapper.insertStep2(user);
+        Integer f3 = usersMapper.insertStep3(user);
+        Integer f4 = usersMapper.insertStep4(user);
+        Integer f5 = usersMapper.insertStep5(user);
+        return true;
     }
 
     private void updatePermission(String operator, Integer userId, String permissionRoles) {
@@ -442,16 +457,9 @@ public class UserService {
                 result.add(user);
             }
         }else {
-            List<User> permissionUsers = commonMapper.getPermissionUsers(operator);
-            List<String> collect = permissionUsers.stream().map(x -> x.getUsername()).collect(Collectors.toList());
             for(User user:userList){
-                if((collect!=null&&collect.contains(user.getUsername()))){
-                    user.setUpdatePermission("1");
-                    result.add(user);
-                }else {
-                    user.setUpdatePermission("0");
-                }
                 user.setPermissionRoles(permissionMap.get(user.getUserId()));
+                result.add(user);
             }
         }
         return result;

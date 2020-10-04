@@ -224,9 +224,11 @@ public class UserService {
             if(mobile!=null){
                 user.setMobile(mobile);
             }
-
             if(email!=null){
                 user.setEmail(email);
+            }
+            if(permissionRoles!=null){
+                user.setPermissionRoles(permissionRoles);
             }
             User result = userDao.saveAndFlush(user);
             if(isNew){//新增用户同步到FR
@@ -252,10 +254,14 @@ public class UserService {
         if(StringUtils.isBlank(operator)){
             return;
         }
-        String[] split = permissionRoles.split(",");
         List<UserPermission> permissionList = Lists.newArrayList();
         List<UserPermission> oldPermissionList = userPermissionDao.findAllByUserIdAndPermissionStatus(userId,"1");
         userPermissionDao.deleteAll(oldPermissionList);
+        if(StringUtils.isBlank(permissionRoles)){
+            userPermissionDao.flush();
+            return;
+        }
+        String[] split = permissionRoles.split(",");
         for(String permissionStr:split){
             UserPermission userPermission = new UserPermission();
             userPermission.setUserId(userId);

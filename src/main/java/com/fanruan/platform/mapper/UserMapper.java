@@ -16,7 +16,10 @@ import java.util.List;
 @Mapper
 public interface UserMapper {
     @Update("update FINEDB1.FINE_USER t set t.ENABLE = 1 where USERNAME IN (SELECT USERNAME FROM BIUSER.CREDIT_USER WHERE BIUSER.CREDIT_USER.STATUS = 1 and USERNAME <> 'admin')")
-    public void updateUserStatus();
+    void updateUserStatus();
+
+    @Update("update credit_user t set t.status = #{status, jdbcType=INTEGER} where t.user_id = #{userId, jdbcType=INTEGER}")
+    void updateCreditUserStatus(@Param("userId") Integer userId,@Param("status") Integer status);
 
     @Select(
             "<script> \n" +

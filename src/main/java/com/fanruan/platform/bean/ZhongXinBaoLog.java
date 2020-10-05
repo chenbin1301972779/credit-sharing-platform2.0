@@ -76,4 +76,12 @@ public class ZhongXinBaoLog {
     //填报时间
     @Column(name="UPDATETIME")
     private Timestamp updateTime;
+
+    //审核人
+    @Column(name="APPROVEBY",length = 255)
+    private String approveby;
+
+    //审核时间
+    @Column(name="APPROVEDATE")
+    private String approveDate;
 }

@@ -963,6 +963,17 @@ public class CompanyService {
         return null;
     }
 
+    public Company getCompanyByName(String companyName){
+        if(StringUtils.isBlank(companyName)){
+            return null;
+        }
+        Optional<Company> companyInfo = companyDao.findByCompanyName(companyName);
+        if(companyInfo.isPresent()){
+            return companyInfo.get();
+        }
+        return null;
+    }
+
     private String buildFinancialDeminingParam(Company company, Map<String, Object> param, Map<String, Object> reportParam) {
 
         String reportUrl = CommonUtil.URI+"/html/financialDemining";

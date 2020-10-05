@@ -50,6 +50,12 @@ public class TianYanChaInfo {
     @Column(name="REG_CREDIDTCODE")
     private String regCredidtcode;
 
+    @Column(name="CREDIT_CODE")
+    private String creditCode;
+
+    @Column(name="LEGALPERSONNAME")
+    private String legalPersonName;
+
     @Column(name="FROMTIME")
     private String fromTime;
 

@@ -140,6 +140,29 @@ public class CompanyController {
         return objectMapper.writeValueAsString(hs);
     }
 
+    @RequestMapping(value = "/company/getCompanyInfoByName", method = RequestMethod.POST)
+    @ResponseBody
+    public String getCompanyInfoByName( @RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String,Object> hs=new HashMap<>();
+        String companyName = (String)param.get("companyName");
+        ObjectMapper objectMapper=new ObjectMapper();
+        if(companyName==null){
+            hs.put("code","1");
+            hs.put("msg","查询公司基本信息失败，companyName为空");
+        }else {
+            Company company =  companyService.getCompanyByName(companyName);
+            if(company==null){
+                hs.put("code","2");
+                hs.put("msg","查询公司基本信息失败");
+            }else {
+                hs.put("company",company);
+                hs.put("code","0");
+                hs.put("msg","");
+            }
+        }
+        return objectMapper.writeValueAsString(hs);
+    }
+
     @RequestMapping(value = "/company/zhongxinbao", method = RequestMethod.POST)
     @ResponseBody
     public String getZhongXinbao( @RequestBody Map<String,Object> param) throws JsonProcessingException {

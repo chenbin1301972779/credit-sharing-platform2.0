@@ -11,4 +11,5 @@ public interface CompanyDao extends JpaRepository<Company,Integer> {
     List<Company> findAllByCreditCodeIn(List<String> creditCodeList);
     List<Company> findAllByCompanyIdIn(List<Integer> companyIdList);
     Optional<Company> findByCreditCode(String creditCode);
+    Optional<Company> findByCompanyName(String companyName);
 }

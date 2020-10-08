@@ -2,9 +2,11 @@ package com.fanruan.platform.mapper;
 
 import com.fanruan.platform.bean.BlackList;
 import com.fanruan.platform.bean.UserCompany;
+import com.fanruan.platform.bean.ZhongXinBaoLog;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -20,4 +22,10 @@ public interface CommonsMapper {
     List<BlackList> getBlackList(String userCode);
     /**子管理员获取可选公司*/
     public List<UserCompany> getUserCompany(String username);
+    /**信保报告审核列表*/
+    List<ZhongXinBaoLog> getZxbApplyList(HashMap<String, Object> hs, Integer pageIndex, Integer pageSize,
+                                        String zxbCode, String name, Integer isSubAdmin, String operator);
+    /**信保报告审核列表-条数*/
+    Integer getZxbApplyListCount(Integer pageIndex,Integer pageSize,
+                                String zxbCode,String name,Integer isSubAdmin,String operator);
 }

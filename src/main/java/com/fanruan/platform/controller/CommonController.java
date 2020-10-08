@@ -24,6 +24,7 @@ import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -227,6 +228,24 @@ public class CommonController {
         commonService.saveLog(param);
         hs.put("code",0);
         hs.put("msg","日志记录成功");
+        return objectMapper.writeValueAsString(hs);
+    }
+
+    @RequestMapping(value = "/common/searchApplyList",method = RequestMethod.POST)
+    @ResponseBody
+    public String searchUserListNew(HttpServletRequest request, @RequestBody Map<String,Object> para) throws JsonProcessingException {
+        ObjectMapper objectMapper=new ObjectMapper();
+        Integer pageIndex = CommonUtils.getIntegerValue(para.get("pageIndex"));
+        Integer pageSize = CommonUtils.getIntegerValue(para.get("pageSize"));
+        String operator = (String)para.get("operator");
+        Integer isSubAdmin = CommonUtils.getIntegerValue(para.get("isSubAdmin"));
+        String zxbCode = (String)para.get("zxbCode");
+        String name = (String)para.get("name");
+        HashMap<String,Object> hs=new HashMap<>();
+        List<ZhongXinBaoLog> applyList = null;
+        hs =  commonService.searchApplyList(hs,pageIndex,pageSize,zxbCode,name,isSubAdmin,operator);
+        applyList = (List<ZhongXinBaoLog> )hs.get("applyList");
+        hs.put("applyList",applyList);
         return objectMapper.writeValueAsString(hs);
     }
 

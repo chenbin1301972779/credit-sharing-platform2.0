@@ -50,6 +50,12 @@ public interface CompanyReportMapper {
     })
     public ZhongXinBaoLog getReportbuyerNo(@Param("code") String code,@Param("social") String social);
 
+    @Select("SELECT CLIENTNO FROM INPUT_HR_ZXB_CLIENT WHERE CODE =(SELECT COMPANY_CODE FROM CREDIT_USER WHERE USERNAME=#{code, jdbcType=VARCHAR})")
+    @Results(id="zhongXinBaoLogByUsername",  value={
+            @Result(property="clientNo", column="CLIENTNO"),
+    })
+    public ZhongXinBaoLog getReportbuyerNo2(@Param("code") String code);
+
 
     @Select("select * from (select MAX(id)as id,USER_ID,KEY_WORD,MAX(SEARCH_TIME) as SEARCH_TIME from CREDIT_SEARCH_WORDS  WHERE USER_ID=#{userId, jdbcType=INTEGER} " +
             "group by KEY_WORD,USER_ID ORDER BY SEARCH_TIME DESC) a where ROWNUM <= #{limit, jdbcType=INTEGER}")

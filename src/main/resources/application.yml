@@ -37,6 +37,8 @@ mybatis:
 #  configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
     mapper-locations: classpath:mapping/*Mapper.xml
+    configuration:
+      map-underscore-to-camel-case: true
 
 platform:
   es:

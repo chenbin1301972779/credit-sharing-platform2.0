@@ -2,6 +2,7 @@ package com.fanruan.platform.controller;
 
 import com.fanruan.platform.bean.*;
 import com.fanruan.platform.constant.CommonUtils;
+import com.fanruan.platform.dao.ZhongXinBaoLogDao;
 import com.fanruan.platform.htmlToPdf.HtmlToPdfUtils;
 import com.fanruan.platform.mapper.PdfMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -29,6 +30,7 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.namespace.QName;
 import java.io.*;
 import java.net.URL;
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -197,6 +199,69 @@ public class CompanyController {
         return objectMapper.writeValueAsString(hs);
     }
 
+    @RequestMapping(value = "/company/zhongxinbaoApply", method = RequestMethod.POST)
+    @ResponseBody
+    public String getZhongXinbaoApply( @RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String,Object> hs=new HashMap<>();
+        Integer userId = CommonUtils.getIntegerValue(param.get("userId")) ;
+        User user = userService.getUserById(userId);
+        ArrayOfEntrustInput arrayOfEntrustInput = new ArrayOfEntrustInput();
+        EntrustInput entrustInput = new EntrustInput();
+        buildEntrustInput(arrayOfEntrustInput, entrustInput,param);
+        companyService.saveZhongXinBaoLog(user,entrustInput);
+        hs.put("returnMsg","申请成功，请耐心等待审核");
+        hs.put("returnCode","0");
+        ObjectMapper objectMapper=new ObjectMapper();
+        return objectMapper.writeValueAsString(hs);
+    }
+
+    @RequestMapping(value = "/company/zhongxinbaoApprove", method = RequestMethod.POST)
+    @ResponseBody
+    public String getZhongXinbaoApprove( @RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String,Object> hs=new HashMap<>();
+        Integer approve = CommonUtils.getIntegerValue(param.get("approve")) ;
+        User user = userService.getUserById(approve);
+        Integer approveCode = CommonUtils.getIntegerValue(param.get("approveCode")) ;
+        if(approveCode == 999){
+            String  corpSerialNo = (String) param.get("corpSerialNo");
+            ZhongXinBaoLog log = companyService.findByCorpSerialNo(corpSerialNo);
+            log.setApproveCode(String.valueOf(approveCode));
+            log.setApproveby(user.getUsername());
+            log.setApproveDate(new Timestamp(System.currentTimeMillis()));
+            companyService.saveZhongXinBaoLog(log);
+            hs.put("returnCode",0);
+            hs.put("returnMsg","操作成功");
+            ObjectMapper objectMapper=new ObjectMapper();
+            return objectMapper.writeValueAsString(hs);
+        }
+        ArrayOfEntrustInput arrayOfEntrustInput = new ArrayOfEntrustInput();
+        EntrustInput entrustInput = new EntrustInput();
+        buildEntrustApprove(arrayOfEntrustInput, entrustInput,param);
+        URL wsdlURL = SolEdiProxyWebService.WSDL_LOCATION;
+        QName SERVICE_NAME = new QName("http://service.edi.exchange.sinosure.com", "SolEdiProxyWebService");
+        SolEdiProxyWebService ss = new SolEdiProxyWebService(wsdlURL,SERVICE_NAME);
+        SolEdiProxyWebServicePortType port = ss.getSolEdiProxyWebServiceHttpPort();
+        try {
+            ArrayOfEdiFeedback arrayOfEdiFeedback = port.doEdiCreditReportInput(arrayOfEntrustInput);
+            List<EdiFeedback> ediFeedback = arrayOfEdiFeedback.getEdiFeedback();
+            for(EdiFeedback e:ediFeedback){
+                String returnMsg = e.getReturnMsg().getValue();
+                String returnCode = e.getReturnCode().getValue();
+                hs.put("returnMsg",returnMsg);
+                hs.put("returnCode",returnCode);
+                companyService.approveZhongXinBaoLog(user,e,entrustInput);
+                companyService.saveReportPushInfo(user,entrustInput);
+            }
+        } catch (EdiException_Exception e) {
+            e.printStackTrace();
+            hs.put("returnCode",-1);
+            hs.put("returnMsg","调用中信保接口失败，请确认参数");
+        }
+
+        ObjectMapper objectMapper=new ObjectMapper();
+        return objectMapper.writeValueAsString(hs);
+    }
+
 
     @RequestMapping(value = "/company/getCodeInfo", method = RequestMethod.POST)
     @ResponseBody
@@ -207,6 +272,22 @@ public class CompanyController {
         ZhongXinBaoLog log = null;
         if(userId!=null&&companyId!=null){
             log  = companyService.getCodeInfo(userId,companyId);
+        }
+        ObjectMapper objectMapper=new ObjectMapper();
+        hs.put("code",0);
+        hs.put("codeInfo",log);
+        hs.put("msg","");
+        return objectMapper.writeValueAsString(hs);
+    }
+
+    @RequestMapping(value = "/company/getCodeInfoByUserId", method = RequestMethod.POST)
+    @ResponseBody
+    public String getCodeInfoByUserId( @RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String,Object> hs=new HashMap<>();
+        Integer userId = CommonUtils.getIntegerValue(param.get("userId")) ;
+        ZhongXinBaoLog log = null;
+        if(userId!=null){
+            log  = companyService.getCodeInfo(userId);
         }
         ObjectMapper objectMapper=new ObjectMapper();
         hs.put("code",0);
@@ -253,6 +334,34 @@ public class CompanyController {
     }
 
 
+    private void buildEntrustApprove(ArrayOfEntrustInput arrayOfEntrustInput, EntrustInput entrustInput, Map<String, Object> param) {
+
+        String  corpSerialNo = (String) param.get("corpSerialNo");
+        ZhongXinBaoLog log = companyService.findByCorpSerialNo(corpSerialNo);
+        entrustInput.setCorpSerialNo(getJAXBElement("corpSerialNo",corpSerialNo));
+        entrustInput.setClientNo(getJAXBElement("clientNo",log.getClientNo()));
+        String reportbuyerNo = log.getReportbuyerNo();
+        String clientNo = log.getClientNo();
+        if(StringUtils.isBlank(reportbuyerNo)){
+            String reportCorpCountryCode = log.getReportCorpCountryCode();
+            String reportCorpChnName = log.getReportCorpChnName();
+            String reportCorpEngName = log.getReportCorpEngName();
+            String reportCorpaddress = log.getReportCorpaddress();
+            String istranslation = String.valueOf(CommonUtils.getIntegerValue(log.getIstranslation())) ;
+
+            entrustInput.setReportCorpCountryCode(getJAXBElement("reportCorpCountryCode",reportCorpCountryCode));
+            entrustInput.setReportCorpChnName(getJAXBElement("reportCorpChnName",reportCorpChnName));
+            entrustInput.setReportCorpEngName(getJAXBElement("reportCorpEngName",reportCorpEngName));
+            entrustInput.setReportCorpaddress(getJAXBElement("reportCorpaddress",reportCorpaddress));
+            entrustInput.setIstranslation(getJAXBElement("istranslation",istranslation));
+            entrustInput.setIstranslation(getJAXBElement("clientno",clientNo));
+        }else{
+            entrustInput.setReportbuyerNo(getJAXBElement("reportbuyerNo",reportbuyerNo));
+            String istranslation = String.valueOf(CommonUtils.getIntegerValue(param.get("istranslation"))) ;
+            entrustInput.setIstranslation(getJAXBElement("istranslation",istranslation));
+        }
+        arrayOfEntrustInput.getEntrustInput().add(entrustInput);
+    }
     private void buildEntrustInput(ArrayOfEntrustInput arrayOfEntrustInput, EntrustInput entrustInput, Map<String, Object> param) {
 
         String reportbuyerNo = (String) param.get("reportbuyerNo");
@@ -380,8 +489,5 @@ public class CompanyController {
         hs.put("msg","");
         return objectMapper.writeValueAsString(hs);
     }
-
-
-
 
 }

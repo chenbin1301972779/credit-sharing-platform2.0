@@ -2,10 +2,7 @@ package com.fanruan.platform.bean;
 
 import lombok.Data;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.sql.Timestamp;
 
 @Data
@@ -83,5 +80,11 @@ public class ZhongXinBaoLog {
 
     //审核时间
     @Column(name="APPROVEDATE")
-    private String approveDate;
+    private Timestamp approveDate;
+
+    @Transient
+    private String updateName;
+
+    @Transient
+    private String approveName;
 }

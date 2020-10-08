@@ -15,6 +15,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -180,4 +181,15 @@ public class CommonService {
         logCreditOperDao.saveAndFlush(logCreditOper);
         return true;
     }
+
+    public HashMap<String,Object> searchApplyList(HashMap<String, Object> hs, Integer pageIndex, Integer pageSize, String zxbCode, String name, Integer isSubAdmin, String operator) {
+        Integer totalRecords = commonsMapper.getZxbApplyListCount(pageIndex, pageSize, zxbCode, name, isSubAdmin, operator);
+        hs.put("totalRecords",totalRecords);
+        hs.put("totalPages",Math.ceil(totalRecords/pageSize));
+        List<ZhongXinBaoLog> applyList = commonsMapper.getZxbApplyList(hs, pageIndex, pageSize, zxbCode, name,  isSubAdmin, operator);
+        hs.put("applyList",applyList);
+        hs.put("code",0);
+        return hs;
+    }
+
 }

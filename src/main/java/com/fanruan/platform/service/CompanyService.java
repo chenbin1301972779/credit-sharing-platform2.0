@@ -499,6 +499,52 @@ public class CompanyService {
         zhongXinBaoLogDao.saveAndFlush(log);
     }
 
+    public void saveZhongXinBaoLog(User user, EntrustInput entrustInput) {
+        if(user==null){
+            return ;
+        }
+        ZhongXinBaoLog log = new ZhongXinBaoLog();
+        log.setCorpSerialNo(getValue(entrustInput.getCorpSerialNo()));
+        log.setClientNo(getValue(entrustInput.getClientNo()));
+        log.setReportbuyerNo(getValue(entrustInput.getReportbuyerNo()));
+        log.setReportCorpCountryCode(getValue(entrustInput.getReportCorpCountryCode()));
+        log.setReportCorpChnName(getValue(entrustInput.getReportCorpChnName()));
+        log.setReportCorpEngName(getValue(entrustInput.getReportCorpEngName()));
+        log.setReportCorpaddress(getValue(entrustInput.getReportCorpaddress()));
+        log.setCreditno(getValue(entrustInput.getCreditno()));
+        log.setIstranslation(getValue(entrustInput.getIstranslation()));
+        log.setCorpSerialNoOut(getValue(entrustInput.getCorpSerialNo()));
+        log.setUpdateBy(user.getUsername());
+        log.setIstranslation(getValue(entrustInput.getIstranslation()));
+        log.setUpdateTime(new Timestamp(System.currentTimeMillis()));
+        zhongXinBaoLogDao.saveAndFlush(log);
+    }
+
+    public void approveZhongXinBaoLog(User user, EdiFeedback feedback, EntrustInput entrustInput) {
+        if(user==null){
+            return ;
+        }
+        ZhongXinBaoLog log;
+        Optional<ZhongXinBaoLog> optional = zhongXinBaoLogDao.findByCorpSerialNo(getValue(entrustInput.getCorpSerialNo()));
+        if(optional.isPresent()){
+            log = optional.get();
+            log.setApproveCode(getValue(feedback.getReturnCode()));
+            log.setApproveMsg(getValue(feedback.getReturnMsg()));
+            log.setClientNoOut(getValue(feedback.getClientNo()));
+            log.setOtherMsg(getValue(feedback.getOtherMsg()));
+            log.setApproveby(user.getUsername());
+            log.setApproveDate(new Timestamp(System.currentTimeMillis()));
+            zhongXinBaoLogDao.saveAndFlush(log);
+        }else {
+            log = new ZhongXinBaoLog();
+            return;
+        }
+    }
+
+    public void saveZhongXinBaoLog(ZhongXinBaoLog log){
+        zhongXinBaoLogDao.saveAndFlush(log);
+    }
+
     private String getValue(JAXBElement<String> element) {
         if(element!=null){
             return element.getValue();
@@ -603,6 +649,15 @@ public class CompanyService {
             return null;
         }
         return companyReportMapper.getReportbuyerNo(user.getCompanyCode(),company.getCreditCode());
+    }
+
+    public ZhongXinBaoLog getCodeInfo(Integer userId) {
+        Optional<User> userOptional = userDao.findById(userId);
+        User user = CommonUtils.getUserValue(userOptional);
+        if(user==null||StringUtils.isBlank(user.getUsername())){
+            return null;
+        }
+        return companyReportMapper.getReportbuyerNo2(user.getUsername());
     }
 
     public List<NewCompany> getNewCompany() {
@@ -720,6 +775,7 @@ public class CompanyService {
         tianYanChaInfo.setDsCreditcode(creditCode);
         tianYanChaInfo.setRegCredidtcode(creditCode);
         tianYanChaInfo.setRegtCredidtcode(creditCode);
+        tianYanChaInfo.setCreditCode(creditCode);
         String format = DateFormatUtils.format(System.currentTimeMillis(), "yyyy-MM-dd HH:mm:ss");
         tianYanChaInfo.setUpdateTime(format);
         return tianYanChaInfoDao.saveAndFlush(tianYanChaInfo);
@@ -970,6 +1026,14 @@ public class CompanyService {
         Optional<Company> companyInfo = companyDao.findByCompanyName(companyName);
         if(companyInfo.isPresent()){
             return companyInfo.get();
+        }
+        return null;
+    }
+
+    public ZhongXinBaoLog findByCorpSerialNo(String corpSerialNo){
+        Optional<ZhongXinBaoLog> optional = zhongXinBaoLogDao.findByCorpSerialNo(corpSerialNo);
+        if(optional.isPresent()){
+            return optional.get();
         }
         return null;
     }

@@ -229,6 +229,9 @@ public class CompanyController {
             log.setApproveby(user.getUsername());
             log.setApproveDate(new Timestamp(System.currentTimeMillis()));
             companyService.saveZhongXinBaoLog(log);
+            String updateBy = log.getUpdateBy();
+            String approveBy = log.getApproveby();
+            companyService.insertOAMsg(updateBy, user.getName());
             hs.put("returnCode",0);
             hs.put("returnMsg","操作成功");
             ObjectMapper objectMapper=new ObjectMapper();
@@ -354,10 +357,10 @@ public class CompanyController {
             entrustInput.setReportCorpEngName(getJAXBElement("reportCorpEngName",reportCorpEngName));
             entrustInput.setReportCorpaddress(getJAXBElement("reportCorpaddress",reportCorpaddress));
             entrustInput.setIstranslation(getJAXBElement("istranslation",istranslation));
-            entrustInput.setIstranslation(getJAXBElement("clientno",clientNo));
+            entrustInput.setClientNo(getJAXBElement("clientno",clientNo));
         }else{
             entrustInput.setReportbuyerNo(getJAXBElement("reportbuyerNo",reportbuyerNo));
-            String istranslation = String.valueOf(CommonUtils.getIntegerValue(param.get("istranslation"))) ;
+            String istranslation = String.valueOf(CommonUtils.getIntegerValue(log.getIstranslation())) ;
             entrustInput.setIstranslation(getJAXBElement("istranslation",istranslation));
         }
         arrayOfEntrustInput.getEntrustInput().add(entrustInput);
@@ -368,9 +371,10 @@ public class CompanyController {
         String clientNo = (String) param.get("clientNo");
 //        String corpSerialNo = (String) param.get("corpSerialNo");
         String  corpSerialNo = CommonUtils.getRandomCode();
-
+        String creditno = (String) param.get("creditno");
         entrustInput.setCorpSerialNo(getJAXBElement("corpSerialNo",corpSerialNo));
         entrustInput.setClientNo(getJAXBElement("clientNo",clientNo));
+        entrustInput.setCreditno(getJAXBElement("creditno",creditno));
         if(StringUtils.isBlank(reportbuyerNo)){
             String reportCorpCountryCode = (String) param.get("reportCorpCountryCode");
             String reportCorpChnName = (String) param.get("reportCorpChnName");
@@ -383,11 +387,13 @@ public class CompanyController {
             entrustInput.setReportCorpEngName(getJAXBElement("reportCorpEngName",reportCorpEngName));
             entrustInput.setReportCorpaddress(getJAXBElement("reportCorpaddress",reportCorpaddress));
             entrustInput.setIstranslation(getJAXBElement("istranslation",istranslation));
-            entrustInput.setIstranslation(getJAXBElement("clientno",clientNo));
+            entrustInput.setClientNo(getJAXBElement("clientno",clientNo));
+            entrustInput.setCreditno(getJAXBElement("creditno",creditno));
         }else{
             entrustInput.setReportbuyerNo(getJAXBElement("reportbuyerNo",reportbuyerNo));
             String istranslation = String.valueOf(CommonUtils.getIntegerValue(param.get("istranslation"))) ;
             entrustInput.setIstranslation(getJAXBElement("istranslation",istranslation));
+            entrustInput.setCreditno(getJAXBElement("creditno",creditno));
         }
         arrayOfEntrustInput.getEntrustInput().add(entrustInput);
     }

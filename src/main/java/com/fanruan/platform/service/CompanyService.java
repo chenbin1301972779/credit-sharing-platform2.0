@@ -7,6 +7,7 @@ import com.fanruan.platform.bean.*;
 import com.fanruan.platform.constant.CommonUtils;
 import com.fanruan.platform.dao.*;
 import com.fanruan.platform.mapper.CommonMapper;
+import com.fanruan.platform.mapper.CommonsMapper;
 import com.fanruan.platform.mapper.CompanyReportMapper;
 import com.fanruan.platform.util.CommonUtil;
 import com.fanruan.platform.util.DateUtil;
@@ -51,6 +52,9 @@ public class CompanyService {
 
     @Autowired
     private CommonMapper commonMapper;
+
+    @Autowired
+    private CommonsMapper commonsMapper;
 
     @Autowired
     private SearchWordsDao searchWordsDao;
@@ -494,7 +498,6 @@ public class CompanyService {
         log.setClientNoOut(getValue(feedback.getClientNo()));
         log.setOtherMsg(getValue(feedback.getOtherMsg()));
         log.setUpdateBy(user.getUsername());
-        log.setIstranslation(getValue(entrustInput.getIstranslation()));
         log.setUpdateTime(new Timestamp(System.currentTimeMillis()));
         zhongXinBaoLogDao.saveAndFlush(log);
     }
@@ -515,7 +518,6 @@ public class CompanyService {
         log.setIstranslation(getValue(entrustInput.getIstranslation()));
         log.setCorpSerialNoOut(getValue(entrustInput.getCorpSerialNo()));
         log.setUpdateBy(user.getUsername());
-        log.setIstranslation(getValue(entrustInput.getIstranslation()));
         log.setUpdateTime(new Timestamp(System.currentTimeMillis()));
         zhongXinBaoLogDao.saveAndFlush(log);
     }
@@ -539,6 +541,10 @@ public class CompanyService {
             log = new ZhongXinBaoLog();
             return;
         }
+    }
+
+    public void insertOAMsg(String updateBy, String approveBy){
+        commonsMapper.insertOAMsg(updateBy, approveBy);
     }
 
     public void saveZhongXinBaoLog(ZhongXinBaoLog log){
@@ -590,7 +596,10 @@ public class CompanyService {
     private void saveTianYanChaConcern(Integer tianyanchaFlag, Company company, User user) {
         if(tianyanchaFlag!=null){
             TianYanChaConcern concern = new TianYanChaConcern();
-            Optional<TianYanChaConcern> byCode = tianYanChaConcernDao.findByCode(company.getCreditCode());
+            //Optional<TianYanChaConcern> byCode = tianYanChaConcernDao.findByCode(company.getCreditCode());
+            String creditCode = company.getCreditCode();
+            String updateby = user.getUsername();
+            Optional<TianYanChaConcern> byCode = tianYanChaConcernDao.findByCodeAndUpdateby(creditCode,updateby);
             if(byCode.isPresent()){
                 concern = byCode.get();
             }
@@ -729,7 +738,7 @@ public class CompanyService {
             return null;
         }
         TianYanChaInfo tianYanChaInfo = new TianYanChaInfo();
-        Optional<TianYanChaInfo> tianYanChaInfoOptional = tianYanChaInfoDao.findByRegCredidtcode(company.getCreditCode());
+        Optional<TianYanChaInfo> tianYanChaInfoOptional = tianYanChaInfoDao.findByCreditCode(company.getCreditCode());
         if(tianYanChaInfoOptional.isPresent()){
             tianYanChaInfo = tianYanChaInfoOptional.get();
             return tianYanChaInfo;
@@ -754,6 +763,7 @@ public class CompanyService {
         String estiblishTime = result.getString("estiblishTime");
         String regLocation = result.getString("regLocation");
         String amomon = result.getString("regCapital");
+        String legalPersonName = result.getString("legalPersonName");
         CompanyExtendInfo companyExtendInfo = new CompanyExtendInfo();
         companyExtendInfo.setCreditCode(creditCode);
         companyExtendInfo.setExtendInfo(dataStr);
@@ -776,6 +786,7 @@ public class CompanyService {
         tianYanChaInfo.setRegCredidtcode(creditCode);
         tianYanChaInfo.setRegtCredidtcode(creditCode);
         tianYanChaInfo.setCreditCode(creditCode);
+        tianYanChaInfo.setLegalPersonName(legalPersonName);
         String format = DateFormatUtils.format(System.currentTimeMillis(), "yyyy-MM-dd HH:mm:ss");
         tianYanChaInfo.setUpdateTime(format);
         return tianYanChaInfoDao.saveAndFlush(tianYanChaInfo);

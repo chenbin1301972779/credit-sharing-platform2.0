@@ -4,16 +4,15 @@ import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
-import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 public class RestClientFactory{
 //    private static final String HOST = "106.14.210.23";
 //    private static final String HOST = "10.0.105.4";
-    private static final String HOST = "10.0.132.12";
-    private static final int PORT = 9200;
-    private static final String SCHEMA = "http";
+//    private static final String HOST = "10.0.132.12";
+//    private static final int PORT = 9200;
+//    private static final String SCHEMA = "http";
     private static final int CONNECT_TIME_OUT = 1000;
     private static final int SOCKET_TIME_OUT = 30000;
     private static final int CONNECTION_REQUEST_TIME_OUT = 500;
@@ -21,19 +20,16 @@ public class RestClientFactory{
     private static final int MAX_CONNECT_NUM = 100;
     private static final int MAX_CONNECT_PER_ROUTE = 100;
 
-    private static HttpHost HTTP_HOST = new HttpHost(HOST,PORT,SCHEMA);
+    private static HttpHost HTTP_HOST;
     private static boolean uniqueConnectTimeConfig = false;
     private static boolean uniqueConnectNumConfig = false;
     private static RestClientBuilder builder;
     private static RestClient restClient;
     private static RestHighLevelClient restHighLevelClient;
 
-    static {
-        init();
-    }
-
-    public static void init(){
+    public static void init(String HOST, int PORT, String SCHEMA){
         // 可以初始化多个HttpHost
+        HTTP_HOST = new HttpHost(HOST,PORT,SCHEMA);
         builder = RestClient.builder(HTTP_HOST);
         if(uniqueConnectTimeConfig){
             setConnectTimeOutConfig();
@@ -75,9 +71,9 @@ public class RestClientFactory{
         return restClient;
     }
 
-    public static RestHighLevelClient getHighLevelClient(){
+    public static RestHighLevelClient getHighLevelClient(String host, int port, String schema){
         if(restHighLevelClient == null){
-            init();
+            init(host,port,schema);
         }
         return restHighLevelClient;
     }

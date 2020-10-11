@@ -242,5 +242,14 @@
             ) M
         WHERE 1 = 1
     </select>
+
+    <insert id="insertOAMsg" parameterType="java.util.List">
+        insert into INPUT_PUSH(ID,USER_NAME,PUSH_FLAG,PUSH_TIME,PROMPTINFO,PUSH_TYPE) VALUES(lower(sys_guid())
+                                                                                            ,#{updateBy}--填报人
+                                                                                            ,'0'
+                                                                                            ,SYSDATE
+                                                                                            ,'您的信保报告申请已被'||#{approveBy}||'驳回，请重新申请。'--审核人
+                                                                                            ,'信保报告审核')
+    </insert>
 </mapper>
 

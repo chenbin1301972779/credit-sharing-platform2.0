@@ -288,8 +288,6 @@ public class UserController{
         return objectMapper.writeValueAsString(hs);
     }
 
-
-
     @RequestMapping(value = "/user/getCareList",method = RequestMethod.POST)
     @ResponseBody
     public String getCareList(@RequestBody Map<String,Object> param) throws JsonProcessingException {

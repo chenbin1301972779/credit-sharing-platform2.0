@@ -8,5 +8,6 @@ import java.util.Optional;
 
 public interface TianYanChaConcernDao extends JpaRepository<TianYanChaConcern,Integer> {
     Optional<TianYanChaConcern> findByCode(String code);
+    Optional<TianYanChaConcern> findByCodeAndUpdateby(String code, String updateby);
     List<TianYanChaConcern> findAll();
 }

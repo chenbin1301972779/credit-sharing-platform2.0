@@ -3,9 +3,8 @@ package com.fanruan.platform.mapper;
 import com.fanruan.platform.bean.BlackList;
 import com.fanruan.platform.bean.UserCompany;
 import com.fanruan.platform.bean.ZhongXinBaoLog;
-import org.apache.ibatis.annotations.Param;
 import org.springframework.stereotype.Repository;
-
+import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 
@@ -28,4 +27,6 @@ public interface CommonsMapper {
     /**信保报告审核列表-条数*/
     Integer getZxbApplyListCount(Integer pageIndex,Integer pageSize,
                                 String zxbCode,String name,Integer isSubAdmin,String operator);
+    /**审核不通过向OA推送消息*/
+    Integer insertOAMsg(String updateBy, String approveBy);
 }

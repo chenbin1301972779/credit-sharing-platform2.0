@@ -17,6 +17,7 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -27,8 +28,16 @@ import java.util.Map;
 
 @Service
 public class ElasticSearchService {
+
+    @Value("${platform.es.host}")
+    private String host;
+    @Value("${platform.es.port}")
+    private int port;
+    @Value("${platform.es.schema}")
+    private String schema;
+
     public Integer saveCompanyList(List<Company> companyList){
-        RestHighLevelClient client = RestClientFactory.getHighLevelClient();
+        RestHighLevelClient client = RestClientFactory.getHighLevelClient(host,port,schema);
 
         for(Company company:companyList){
             Integer code = saveCompany(client, company);
@@ -55,7 +64,7 @@ public class ElasticSearchService {
     }
 
     public List<Company> QueryCompanyList(String keyword, Integer page) {
-        RestHighLevelClient client = RestClientFactory.getHighLevelClient();
+        RestHighLevelClient client = RestClientFactory.getHighLevelClient(host,port,schema);
         SearchRequest searchRequest = new SearchRequest();
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
 //        HighlightBuilder highlightBuilder = new HighlightBuilder();

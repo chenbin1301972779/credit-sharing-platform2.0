@@ -9,5 +9,6 @@ import java.util.Optional;
 
 public interface TianYanChaInfoDao extends JpaRepository<TianYanChaInfo,Integer> {
     Optional<TianYanChaInfo> findById(Integer id);
-    Optional<TianYanChaInfo> findByRegCredidtcode(String creditCode);
+    Optional<TianYanChaInfo> findByCreditCode(String creditCodes);
+
 }

@@ -4,7 +4,6 @@ import com.fanruan.platform.bean.BlackList;
 import com.fanruan.platform.bean.UserCompany;
 import com.fanruan.platform.bean.ZhongXinBaoLog;
 import org.springframework.stereotype.Repository;
-import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 

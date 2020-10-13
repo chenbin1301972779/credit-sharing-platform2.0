@@ -283,6 +283,8 @@
                     <include>application.properties</include>
                     <include>application-${environment}.properties</include>
                     <include>application-${environment}.yml</include>
+                    <include>**/*.xml</include>
+                    <include>**/*.jsp</include>
                 </includes>
                 <filtering>true</filtering>
             </resource>

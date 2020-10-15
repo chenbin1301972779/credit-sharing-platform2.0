@@ -8,6 +8,7 @@ import com.fanruan.platform.dao.*;
 import com.fanruan.platform.mapper.CommonMapper;
 import com.fanruan.platform.mapper.UserMapper;
 import com.fanruan.platform.mapper.UsersMapper;
+import com.fanruan.platform.util.MD5Util;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -218,7 +219,8 @@ public class UserService {
             if(status!=null){
                 user.setStatus(status);
             }
-            if(StringUtils.isNotBlank(password)){
+            if(StringUtils.isNotBlank(password)&&!password.equals(user.getPassword())){
+                password = MD5Util.MD5(username+password);
                 user.setPassword(password);
             }
             if(mobile!=null){

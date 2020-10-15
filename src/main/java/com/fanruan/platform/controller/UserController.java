@@ -7,6 +7,7 @@ import com.fanruan.platform.mapper.PdfMapper;
 import com.fanruan.platform.mapper.UserMapper;
 import com.fanruan.platform.service.CompanyService;
 import com.fanruan.platform.service.UserService;
+import com.fanruan.platform.util.MD5Util;
 import com.fanruan.platform.util.TokenUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -51,6 +52,7 @@ public class UserController{
                 ObjectMapper objectMapper=new ObjectMapper();
                 return objectMapper.writeValueAsString(hs);
             }
+            password = MD5Util.MD5(username+password);
             user =  userService.getUserCheck(username,password);
         }
         if(user==null){

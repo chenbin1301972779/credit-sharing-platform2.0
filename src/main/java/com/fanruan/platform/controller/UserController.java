@@ -69,6 +69,7 @@ public class UserController{
         hs.put("username",username);
         hs.put("name",user.getName());
         hs.put("userId",user.getUserId());
+        hs.put("companyCode",user.getCompanyCode());
         request.getSession().setAttribute("username", username);
         ObjectMapper objectMapper=new ObjectMapper();
         return objectMapper.writeValueAsString(hs);

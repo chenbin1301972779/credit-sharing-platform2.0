@@ -305,13 +305,13 @@
     </resultMap>
     <select id="getAllCompanyLevel" resultType="com.fanruan.platform.bean.CompanyLevel">
         SELECT CODE,NAME,SCODE,SNAME FROM BIUSER.ODS_HR_ORG
-        where 1 = 1
+        where ENABLESTATE='2'
         <if test="companyCode != null and companyCode !=''">
             and (SCODE = #{companyCode})
         </if>
         UNION
         SELECT CODE,NAME,SCODE,SNAME FROM BIUSER.INPUT_HR_ORG
-        WHERE 1 = 1
+        WHERE ENABLESTATE='1'
         <if test="companyCode != null and companyCode !=''">
            and (SCODE = #{companyCode})
         </if>
@@ -324,17 +324,34 @@
     </resultMap>
     <select id="getCompanyLevel" resultType="com.fanruan.platform.bean.CompanyLevel">
         SELECT CODE,NAME,SCODE,SNAME FROM BIUSER.ODS_HR_ORG
-        where 1 = 1
+        where ENABLESTATE='2'
         <if test="companyCode != null and companyCode !=''">
             and (CODE = #{companyCode})
         </if>
         UNION
         SELECT CODE,NAME,SCODE,SNAME FROM BIUSER.INPUT_HR_ORG
-        WHERE 1 = 1
+        WHERE ENABLESTATE='1'
         <if test="companyCode != null and companyCode !=''">
             and (CODE = #{companyCode})
         </if>
     </select>
 
+
+    <resultMap id="getCompanyStatusResultMap" type="java.lang.String">
+        <result column="flag" jdbcType="VARCHAR" property="flag" />
+    </resultMap>
+    <select id="getCompanyStatus" resultType="java.lang.String">
+        SELECT CASE WHEN ENABLESTATE='2' THEN '1' ELSE '0' END AS FLAG FROM BIUSER.ODS_HR_ORG
+        WHERE 1 = 1
+        <if test="companyCode != null and companyCode !=''">
+        and (CODE = #{companyCode})
+        </if>
+        UNION
+        SELECT CASE WHEN ENABLESTATE='1' THEN '1' ELSE '0' END AS FLAG FROM BIUSER.INPUT_HR_ORG
+        WHERE 1 = 1
+        <if test="companyCode != null and companyCode !=''">
+            and (CODE = #{companyCode})
+        </if>
+    </select>
 </mapper>
 

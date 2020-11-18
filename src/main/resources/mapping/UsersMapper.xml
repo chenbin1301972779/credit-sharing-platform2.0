@@ -452,9 +452,9 @@
 <!--        </if>-->
 <!--        )-->
         with ds1 as(
-        SELECT CODE,NAME,SCODE,SNAME FROM BIUSER.ODS_HR_ORG
+        SELECT CODE,NAME,SCODE,SNAME FROM BIUSER.ODS_HR_ORG WHERE ENABLESTATE='2'
         UNION
-        SELECT CODE,NAME,SCODE,SNAME FROM BIUSER.INPUT_HR_ORG
+        SELECT CODE,NAME,SCODE,SNAME FROM BIUSER.INPUT_HR_ORG WHERE ENABLESTATE='1'
         )
         SELECT COUNT(1) as co
         FROM (
@@ -462,11 +462,16 @@
         SELECT ROWNUM AS rowno,N.*
         FROM (
         SELECT
-        USER_ID,USERNAME,PASSWORD,MOBILE,EMAIL,COMPANY_NAME,DEPT_NAME,COMPANY_CODE,DEPT_CODE,STATUS,NEWCOMPANY_FLAG,
-        F_GET_PERMISSION_BY_USERID(user_id) as permissionRoles,
-        CASE WHEN INSTR(F_GET_PERMISSION_BY_USERID(user_id),('sub_admin')) > 0 THEN 1 ELSE 0 END as isSubAdmin, NAME
-        FROM CREDIT_USER
-        WHERE COMPANY_CODE IN (
+        USER_ID,USERNAME,PASSWORD,MOBILE,EMAIL,ds1.NAME as COMPANY_NAME,DEPT_NAME,ds1.CODE as COMPANY_CODE,DEPT_CODE,STATUS,NEWCOMPANY_FLAG,
+      --  F_GET_PERMISSION_BY_USERID(user_id) as permissionRoles,
+       -- CASE WHEN INSTR(F_GET_PERMISSION_BY_USERID(user_id),('sub_admin')) > 0 THEN 1 ELSE 0 END as isSubAdmin,
+        U.ROLE_NAME as permissionRoles,
+        CASE WHEN U.ROLE_NAME = '子管理员' THEN 1 ELSE 0 END as isSubAdmin,
+       U.NAME
+        FROM CREDIT_USER U
+        LEFT JOIN ds1
+        on U.COMPANY_CODE = ds1.CODE
+        WHERE  USER_ID!=1 AND COMPANY_CODE IN (
         SELECT CODE --自身
         FROM ds1 A
         WHERE 1 = 1
@@ -529,15 +534,15 @@
             and (USERNAME like '%'||#{username}||'%' )
         </if>
         <if test="name != null and name!=''">
-            and (NAME like '%'||#{name}||'%' )
+            and (U.NAME like '%'||#{name}||'%' )
         </if>
         ORDER BY isSubAdmin DESC,status desc
         ) N
-        ) M
         WHERE 1 = 1
         <if test="isSubAdmin != null">
-            and (M.isSubAdmin = #{isSubAdmin} )
+            and (N.isSubAdmin = #{isSubAdmin})
         </if>
+        ) M
         ) C
     </select>
 
@@ -554,6 +559,8 @@
         <result column="status" jdbcType="VARCHAR" property="status" />
         <result column="newcompanyFlag" jdbcType="VARCHAR" property="newcompanyFlag" />
         <result column="permissionRoles" jdbcType="VARCHAR" property="permissionRoles" />
+        <result column="roleName" jdbcType="VARCHAR" property="roleName" />
+
     </resultMap>
 
     <select id="getUserListLevel" resultType="com.fanruan.platform.bean.User">
@@ -645,27 +652,32 @@
 <!--        AND rowno &gt; (#{pageIndex}-1) * #{pageSize}-->
 <!--        order by USERNAME-->
         with ds1 as(
-        SELECT CODE,NAME,SCODE,SNAME FROM BIUSER.ODS_HR_ORG
+        SELECT CODE,NAME,SCODE,SNAME FROM BIUSER.ODS_HR_ORG WHERE ENABLESTATE='2'
         UNION
-        SELECT CODE,NAME,SCODE,SNAME FROM BIUSER.INPUT_HR_ORG
+        SELECT CODE,NAME,SCODE,SNAME FROM BIUSER.INPUT_HR_ORG WHERE ENABLESTATE='1'
         )
         SELECT M.* FROM (
         SELECT ROWNUM AS rowno,N.*
         FROM (
         SELECT
-        USER_ID,USERNAME,PASSWORD,MOBILE,EMAIL,COMPANY_NAME,DEPT_NAME,COMPANY_CODE,DEPT_CODE,STATUS,NEWCOMPANY_FLAG,
-        F_GET_PERMISSION_BY_USERID(user_id) as permissionRoles,
-        CASE WHEN INSTR(F_GET_PERMISSION_BY_USERID(user_id),('sub_admin')) > 0 THEN 1 ELSE 0 END as isSubAdmin, NAME
-        FROM CREDIT_USER
-        WHERE COMPANY_CODE IN (
-        SELECT CODE --自身
+        USER_ID,USERNAME,PASSWORD,MOBILE,EMAIL,ds1.NAME AS COMPANY_NAME ,ROLE_NAME,DEPT_NAME,ds1.CODE AS COMPANY_CODE,DEPT_CODE,STATUS,NEWCOMPANY_FLAG,
+        --F_GET_PERMISSION_BY_USERID(user_id) as permissionRoles,
+        --CASE WHEN INSTR(F_GET_PERMISSION_BY_USERID(user_id),('sub_admin')) > 0 THEN 1 ELSE 0 END as isSubAdmin,
+        U.ROLE_NAME as permissionRoles,
+        CASE WHEN U.ROLE_NAME = '子管理员' THEN 1 ELSE 0 END as isSubAdmin,
+         U.NAME
+        FROM CREDIT_USER U
+        LEFT JOIN ds1
+        on U.COMPANY_CODE = ds1.CODE
+        WHERE  USER_ID!=1 AND COMPANY_CODE IN (
+        SELECT CODE
         FROM ds1 A
         WHERE 1 = 1
         <if test="companyCode != null and companyCode != ''">
             and (A.CODE = #{companyCode} )
         </if>UNION ALL
         SELECT
-        CODE --下级公司
+        CODE
         FROM ds1
         A
         WHERE 1 = 1
@@ -674,7 +686,7 @@
         </if>
         UNION ALL
         SELECT B.
-        CODE --下下级公司
+        CODE
         FROM ds1 A
         INNER
         JOIN ds1 B ON A.CODE=B.SCODE
@@ -685,7 +697,7 @@
         UNION
         ALL
         SELECT C
-        .CODE --下下下级公司
+        .CODE
         FROM
         ds1 A
         INNER
@@ -699,7 +711,7 @@
         UNION
         ALL
         SELECT
-        D.CODE --下下下下级公司
+        D.CODE
         FROM
         ds1 A
         INNER
@@ -720,19 +732,34 @@
             and (USERNAME like '%'||#{username}||'%' )
         </if>
         <if test="name != null and name!=''">
-            and (NAME like '%'||#{name}||'%' )
+            and (U.NAME like '%'||#{name}||'%' )
         </if>
         ORDER BY isSubAdmin DESC,status desc
         ) N
-        ) M
         WHERE 1 = 1
         <if test="isSubAdmin != null">
-            and (M.isSubAdmin = #{isSubAdmin} )
+            and (N.isSubAdmin = #{isSubAdmin})
         </if>
+        ) M
+        WHERE 1 = 1
         AND rowno &lt;= #{pageIndex} * #{pageSize}
         AND rowno &gt; (#{pageIndex}-1) * #{pageSize}
     </select>
 
-
+    <resultMap id="getReviewerResultMap" type="java.lang.String">
+        <result column="flag" jdbcType="VARCHAR" property="flag" />
+    </resultMap>
+    <select id="getReviewer" resultType="java.lang.String">
+        SELECT CASE WHEN count(C.USERNAME)>0 THEN 1 ELSE 0 END AS FLAG FROM CREDIT_USER C
+        INNER JOIN CREDIT_USER_PERMISSION P ON C.USER_ID=P.USER_ID
+        WHERE C.COMPANY_CODE IN(SELECT DISTINCT O.COMPANYCODE FROM CREDIT_USER U INNER JOIN DIM_ORG O ON
+        U.COMPANY_CODE=O.SUBCOMPANYCODE
+        WHERE 1 = 1
+        <if test="userName != null and userName!=''">
+            and (U.USERNAME = #{userName} )
+        </if>
+        )
+        AND P.PERMISSION_ROLE='zxb_report_reviewer'
+    </select>
 </mapper>
 

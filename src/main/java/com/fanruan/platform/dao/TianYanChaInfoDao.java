@@ -10,5 +10,5 @@ import java.util.Optional;
 public interface TianYanChaInfoDao extends JpaRepository<TianYanChaInfo,Integer> {
     Optional<TianYanChaInfo> findById(Integer id);
     Optional<TianYanChaInfo> findByCreditCode(String creditCodes);
-
+    Optional<TianYanChaInfo> findByName(String CompanyName);
 }

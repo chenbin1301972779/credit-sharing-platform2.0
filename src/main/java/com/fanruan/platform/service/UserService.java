@@ -90,7 +90,28 @@ public class UserService {
         return userFocusDao.saveAndFlush(userFocus);
     }
 
-
+    public UserFocus saveRelation(User user,Company company, Map<String, Integer> relations){
+        Map<String,Integer> resultMap = Maps.newHashMap();
+        UserFocus userFocus = userFocusDao.findAllByUserIdAndCompanyId(user.getUserId(),company.getCompanyId());
+        if(userFocus==null){
+            userFocus = new UserFocus();
+            userFocus.setUserId(user.getUserId());
+            userFocus.setCompanyId(company.getCompanyId());
+            userFocus.setCompanyName(company.getCompanyName());
+        }
+        if(StringUtils.isNotBlank(userFocus.getRelations())){
+            Map mapRelations = JSON.parseObject(userFocus.getRelations(),Map.class);
+            resultMap.putAll(mapRelations);
+        }
+        resultMap.putAll(relations);
+        Collection<Integer> values = resultMap.values();
+        if(!values.contains(1)){
+            userFocusDao.delete(userFocus);
+            return null;
+        }
+        userFocus.setRelations(JSONObject.toJSONString(resultMap));
+        return userFocusDao.saveAndFlush(userFocus);
+    }
 
 
 
@@ -203,19 +224,19 @@ public class UserService {
             if(StringUtils.isNotBlank(name)){
                 user.setName(name);
             }
-            if(companyName!=null){
+            if(StringUtils.isNoneBlank(companyName)){
                 user.setCompanyName(companyName);
             }
             if(user.getUserId()!=null){
                 user.setNewCompanyFlag(1);
             }
-            if(companyCode!=null){
+            if(StringUtils.isNoneBlank(companyCode)){
                 user.setCompanyCode(companyCode);
             }
-            if(deptName!=null){
+            if(StringUtils.isNoneBlank(deptName)){
                 user.setDeptName(deptName);
             }
-            if(deptCode!=null){
+            if(StringUtils.isNoneBlank(deptCode)){
                 user.setDeptCode(deptCode);
             }
             if(status!=null){
@@ -225,13 +246,13 @@ public class UserService {
                 password = MD5Util.MD5(username+password);
                 user.setPassword(password);
             }
-            if(mobile!=null){
+            if(StringUtils.isNoneBlank(mobile)){
                 user.setMobile(mobile);
             }
-            if(email!=null){
+            if(StringUtils.isNoneBlank(email)){
                 user.setEmail(email);
             }
-            if(permissionRoles!= null){
+            if(StringUtils.isNoneBlank(permissionRoles)){
                 user.setPermissionRoles(permissionRoles);
                 user.setRoleName(permissionRoles);
             }

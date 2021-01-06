@@ -1,9 +1,6 @@
 package com.fanruan.platform.controller;
 
-import com.fanruan.platform.bean.PermissionPoint;
-import com.fanruan.platform.bean.Role;
-import com.fanruan.platform.bean.User;
-import com.fanruan.platform.bean.UserPermission;
+import com.fanruan.platform.bean.*;
 import com.fanruan.platform.constant.CommonUtils;
 import com.fanruan.platform.mapper.PdfMapper;
 import com.fanruan.platform.mapper.UserMapper;
@@ -85,6 +82,7 @@ public class UserController{
         hs.put("name",user.getName());
         hs.put("userId",user.getUserId());
         hs.put("companyCode",user.getCompanyCode());
+        hs.put("companyName",user.getCompanyName());
         request.getSession().setAttribute("username", username);
         ObjectMapper objectMapper=new ObjectMapper();
         return objectMapper.writeValueAsString(hs);
@@ -301,15 +299,15 @@ public class UserController{
        if(zhongchengxinFlag!=null){
            relations.put("zhongchengxin",zhongchengxinFlag);
        }
-        companyService.updateConcernInfo(param,companyId,userId,tianyanchaFlag,zhongchengxinFlag);
+       companyService.updateConcernInfo(param, companyId, userId, tianyanchaFlag, zhongchengxinFlag);
         HashMap<String,Object> hs=new HashMap<>();
-        if(userId != null && companyId!=null ){
+        if(userId != null && companyId!=null){
             userService.saveRelation(hs,userId,companyId,relations);
             hs.put("code","0");
             hs.put("msg","用户关注关系更新成功");
         }else {
             hs.put("code","1");
-            hs.put("msg"," userId或者companyId为空");
+            hs.put("msg"," userId或者companyId为空或者监控接口报错");
         }
         ObjectMapper objectMapper=new ObjectMapper();
         return objectMapper.writeValueAsString(hs);

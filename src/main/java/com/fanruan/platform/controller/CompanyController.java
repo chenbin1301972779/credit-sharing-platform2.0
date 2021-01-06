@@ -91,6 +91,24 @@ public class CompanyController {
         return objectMapper.writeValueAsString(hs);
     }
 
+    @RequestMapping(value = "/company/directSearch", method = RequestMethod.POST)
+    @ResponseBody
+    public String directSearch(@RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String,Object> hs=new HashMap<>();
+        ObjectMapper objectMapper=new ObjectMapper();
+        String companyName = StringUtils.trim((String) param.get("companyName"));
+        if(StringUtils.isBlank(companyName)){
+            hs.put("msg", "请填写正确的companyName");
+            hs.put("data","");
+            hs.put("sourceType","模糊查询接口");
+            return objectMapper.writeValueAsString(hs);
+        }
+        JSONObject dataStr  =  companyService.getDirectSearch(companyName);
+        hs.put("msg", "");
+        hs.put("data",dataStr);
+        hs.put("sourceType","模糊查询接口");
+        return objectMapper.writeValueAsString(hs);
+    }
 
 
     @RequestMapping(value = "/company/latestWords", method = RequestMethod.POST)
@@ -124,12 +142,13 @@ public class CompanyController {
         HashMap<String,Object> hs=new HashMap<>();
         Integer companyId = CommonUtils.getIntegerValue(param.get("companyId"));
         Integer userId = CommonUtils.getIntegerValue(param.get("userId"));
+        String companyName = (String)param.get("companyName");
         ObjectMapper objectMapper=new ObjectMapper();
-        if(companyId==null){
+        if(companyId==null && StringUtils.isBlank(companyName)){
             hs.put("code","1");
             hs.put("msg","查询公司基本信息失败，companyId为空");
         }else {
-            TianYanChaInfo tianYanChaInfo =  companyService.getTianYanChaInfo(companyId,userId);
+            TianYanChaInfo tianYanChaInfo =  companyService.getTianYanChaInfo(companyId,userId,companyName);
             if(tianYanChaInfo==null){
                 hs.put("code","2");
                 hs.put("msg","查询公司基本信息失败");
@@ -572,5 +591,16 @@ public class CompanyController {
         return objectMapper.writeValueAsString(hs);
     }
 
+    @RequestMapping(value = "/company/getCompayNameAndCreditCode", method = RequestMethod.POST)
+    @ResponseBody
+    public String getCompayNameAndCreditCode(@RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String, Object> hs = new HashMap<>();
+        ObjectMapper objectMapper=new ObjectMapper();
+        List<CompayNameCode> compayNameAndCreditCodes = companyService.getCompayNameAndCreditCode();
+        hs.put("code",0);
+        hs.put("msg","");
+        hs.put("compayNameAndCreditCodes",compayNameAndCreditCodes);
+        return objectMapper.writeValueAsString(hs);
+    }
 
 }

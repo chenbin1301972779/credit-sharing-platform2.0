@@ -1,6 +1,7 @@
 package com.fanruan.platform.service;
 
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.fanruan.platform.bean.*;
@@ -23,10 +24,16 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.http.Consts;
 import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -162,14 +169,15 @@ public class CompanyService {
 ////        List<Company> companyList = getCompaniesOld(keyword, page);
         List<Company> companyList = getCompanies(keyword);
         List<String> creditCodeList =  CommonUtils.getCreditCode(companyList);
+        List<String> companyNames =  CommonUtils.getCompanyName(companyList);
         List<Company> companys = companyDao.findAllByCreditCodeIn(creditCodeList);
         List<String> creditCodeExists = CommonUtils.getCreditCode(companys);
         List<String> creditNameExists = CommonUtils.getCompanyName(companys);
         List<Company> needStore = Lists.newArrayList();
         for(Company company:companyList){
-            if(StringUtils.isNotBlank(company.getCreditCode())&&!creditCodeExists.contains(company.getCreditCode())){
+            if(StringUtils.isNotBlank(company.getCreditCode())&&!creditCodeExists.contains(company.getCreditCode())) {
                 needStore.add(company);
-            }else if(StringUtils.isBlank(company.getCreditCode())&&!creditNameExists.contains(company.getCompanyName())){
+            }else if(StringUtils.isBlank(company.getCreditCode())&&!creditNameExists.contains(company.getCompanyName())) {
                 needStore.add(company);
             }
         }
@@ -178,8 +186,18 @@ public class CompanyService {
         if(code>0){
             System.out.println("error elasticsearch");
         }
-        return companyDao.findAllByCreditCodeIn(creditCodeList);
+      // return companyDao.findAllByCreditCodeIn(creditCodeList);
+       return companyDao.findAllByCompanyNameIn(companyNames);
     }
+
+
+    public JSONObject getDirectSearch(String keyword){
+        Map param = new HashMap();
+        param.put("word", keyword);
+        String dataStr = requestTianYanChaAPI(param,"/services/open/search/2.0?");
+        return JSONObject.parseObject(dataStr);
+    }
+
 
     private List<Company> getCompanies(String keyword) {
 
@@ -201,9 +219,9 @@ public class CompanyService {
                 Long id = item.getLong("id");
                 String entName = StringUtil.getOrginName(item.getString("name"));
                 String regCapital = item.getString("regCapital");
-                if(StringUtils.isBlank(regCode)){
-                    continue;
-                }
+//                if(StringUtils.isBlank(regCode)){   // 取消过滤
+//                    continue;
+//                }
                 Company company = new Company();
                 company.setId(id);
                 company.setRegistCapi(regCapital);
@@ -615,10 +633,103 @@ public class CompanyService {
         Company company = CommonUtils.getCompanyValue(companyOptional);
         Optional<User> userOptional = userDao.findById(userId);
         User user = CommonUtils.getUserValue(userOptional);
-        saveZhongChengXinConcern(param, zhongchengxinFlag, company, user);
+        String requestId = CommonUtils.getRandomCode();
         saveTianYanChaConcern(tianyanchaFlag, company, user);
+        saveZhongChengXinConcern(param, zhongchengxinFlag, company, user,requestId);
+
+        Map<String, Object> xinTuo = new HashMap<>();
+        xinTuo.put("userCode",user.getUsername());
+        xinTuo.put("companyName", company.getCompanyName());
+        if(null != tianyanchaFlag){
+            xinTuo.put("tianyanchaflag",tianyanchaFlag);
+        }
+        if(null != zhongchengxinFlag){
+            xinTuo.put("zhongchengxinflag",zhongchengxinFlag);
+        }
+        String entName = (String) param.get("entName");
+
+        xinTuo.put("enttype", param.get("entType"));
+        xinTuo.put("arealevel",param.get("areaLevel"));
+        xinTuo.put("provincename",param.get("provinceName"));
+        xinTuo.put("provincecode",param.get("provinceCode"));
+        xinTuo.put("cityname", param.get("cityName"));
+        xinTuo.put("citycode", param.get("cityCode"));
+        xinTuo.put("countycode", param.get("countyCode"));
+        xinTuo.put("countyName",param.get("countyName"));
+        String xinTuoINfo = putXinTuo(xinTuo);
+        System.out.println("---------------------------------------");
+        System.out.println(xinTuoINfo);
+        System.out.println("---------------------------------------");
         return true;
     }
+
+    public String putXinTuo(Map<String,Object> param){
+//        String xinTuo = "http://localhost:9001/api/common/concern";
+        String xinTuo = "http://10.64.33.182:8088/tcmp/SynCompInfoServlet";
+        HttpPost post = new HttpPost(xinTuo);
+        HttpClient client = new DefaultHttpClient();
+        StringEntity entity = new StringEntity(JSONObject.toJSONString(param), Consts.UTF_8);
+        post.setEntity(entity);
+        System.out.println(JSONObject.toJSONString(param));
+        String dataStr = null;
+        HttpResponse execute = null;
+        try {
+            execute = client.execute(post);
+            dataStr = EntityUtils.toString(execute.getEntity(), Consts.UTF_8);
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+        System.out.println(execute);
+        return dataStr;
+    }
+
+
+    public boolean updateConcernInfo(Map<String, Object> param,Integer tianyanchaFlag, Integer zhongchengxinFlag,Company company, User user){
+        Map<String, Object> zcxParam = new HashMap<>();
+        String entName = (String) param.get("entName");
+        String countyName = (String) param.get("countyName");
+        String countyCode = (String) param.get("countyCode");
+        String cityCode = (String) param.get("cityCode");
+        String cityName = (String) param.get("cityName");
+        String areaLevel = (String) param.get("areaLevel");
+        String provinceCode = (String) param.get("provinceCode");
+        String provinceName = (String) param.get("provinceName");
+        Integer entType = CommonUtils.getIntegerValue(param.get("entType"));
+        zcxParam.put("countyName", countyName);
+        zcxParam.put("countyCode", countyCode);
+        zcxParam.put("cityCode", cityCode);
+        zcxParam.put("cityName", cityName);
+        zcxParam.put("provinceCode",provinceCode);
+        zcxParam.put("provinceName", provinceName);
+        zcxParam.put("adminLevel", areaLevel);
+        zcxParam.put("entType", entType);
+        zcxParam.put("entName", entName);
+        zcxParam.put("code", company.getCreditCode());
+
+        String requestId = CommonUtils.getRandomCode();
+        if(null == company.getCreditCode()){
+            return false;
+        }
+        if(null != tianyanchaFlag){
+            String tycStr = tycMonitoring(company.getCompanyName());
+            JSONObject tycJson = JSONObject.parseObject(tycStr);
+            if((null != tycJson && "ok".equals(tycJson.get("state"))) || 0 == tianyanchaFlag){
+                saveTianYanChaConcern(tianyanchaFlag, company, user);
+                return true;
+            }
+        }
+
+        if(null != zhongchengxinFlag){
+            String zcxStr = zcxMonitoring(zcxParam,requestId);
+            JSONObject zcxJson = JSONObject.parseObject(zcxStr);
+            if((null != zcxJson && (200 == CommonUtils.getIntegerValue(zcxJson.get("code")) || 3004 == CommonUtils.getIntegerValue(zcxJson.get("code")))) || 0 == zhongchengxinFlag){
+                saveZhongChengXinConcern(param, zhongchengxinFlag, company, user,requestId);
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     private void saveTianYanChaConcern(Integer tianyanchaFlag, Company company, User user) {
         if(tianyanchaFlag!=null){
@@ -639,7 +750,37 @@ public class CompanyService {
         }
     }
 
-    private boolean saveZhongChengXinConcern(Map<String, Object> param, Integer zhongchengxinFlag, Company company, User user) {
+
+    /**
+     *  天眼查监控接口
+     * @param domainNames   需要关注的公司信息
+     * @return
+     */
+    private String tycMonitoring(String domainNames){
+        String tycMonitoringUrl = "https://std.tianyancha.com/cloud-monitor/group/map.json";
+        HttpPost post = new HttpPost(tycMonitoringUrl);
+        HttpClient client = new DefaultHttpClient();
+        List<NameValuePair> params=new ArrayList<NameValuePair>();
+        params.add(new BasicNameValuePair("_username",CommonUtil.TIAN_YAN_CHA_MONITORING_USERNAME));
+        params.add(new BasicNameValuePair("_authId",CommonUtil.TIAN_YAN_CHA_MONITORING_AUTHID));
+        params.add(new BasicNameValuePair("_sign",MD5Util.MD5(CommonUtil.TIAN_YAN_CHA_MONITORING_USERNAME+CommonUtil.TIAN_YAN_CHA_MONITORING_KEY)));
+        params.add(new BasicNameValuePair("domainNames",domainNames));
+        UrlEncodedFormEntity urlEncodedFormEntity = new UrlEncodedFormEntity(params, Consts.UTF_8);
+        post.setEntity(urlEncodedFormEntity);
+        String dataStr = null;
+        HttpResponse execute = null;
+        try {
+            execute = client.execute(post);
+            dataStr = EntityUtils.toString(execute.getEntity(), Consts.UTF_8);
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+        return dataStr;
+    }
+
+
+
+    private boolean saveZhongChengXinConcern(Map<String, Object> param, Integer zhongchengxinFlag, Company company, User user,String requestId) {
         if(zhongchengxinFlag!=null){
             ZhongChengXinConcern zhongChengXinConcern = new ZhongChengXinConcern();
             String entType = (String) param.get("entType");
@@ -659,7 +800,6 @@ public class CompanyService {
             String provinceCode = (String) param.get("provinceCode");
             String provinceName = (String) param.get("provinceName");
             String updateBy = user.getUsername();
-            String requestId = CommonUtils.getRandomCode();
             zhongChengXinConcern.setConcernFlag(String.valueOf(zhongchengxinFlag));
             zhongChengXinConcern.setEntName(entName);
             zhongChengXinConcern.setCountyName(countyName);
@@ -678,6 +818,35 @@ public class CompanyService {
         }
         return false;
     }
+
+    /**
+     * 中诚信监控接口
+     * @param param
+     * @return
+     */
+    private String zcxMonitoring(Map<String, Object> param, String requestId){
+        String zcxMonitoringUrl = "http://creditrisk.ccx.com.cn/open-api/addSupervisory";
+        HttpPost post = new HttpPost(zcxMonitoringUrl);
+        HttpClient client = new DefaultHttpClient();
+        post.setHeader("account",CommonUtil.ZHONG_CHEN_XIN_MONITORING_ACOUNT);
+        JSONObject body = new JSONObject();
+        body.put("param",param);
+        body.put("requestId",requestId);
+        body.put("sign",MD5Util.MD5(JSONObject.toJSONString(param) + CommonUtil.ZHONG_CHEN_XIN_MONITORING_API_KEY+requestId));
+        System.out.println(JSONObject.toJSONString(param));
+        StringEntity entity = new StringEntity(body.toString(), Consts.UTF_8);
+        post.setEntity(entity);
+        String dataStr = null;
+        HttpResponse execute = null;
+        try {
+            execute = client.execute(post);
+            dataStr = EntityUtils.toString(execute.getEntity(), Consts.UTF_8);
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+        return dataStr;
+    }
+
 
     public ZhongXinBaoLog getCodeInfo(Integer userId, Integer companyId) {
         Optional<User> userOptional = userDao.findById(userId);
@@ -772,14 +941,87 @@ public class CompanyService {
         return null;
     }
 
-    public TianYanChaInfo getTianYanChaInfo(Integer companyId,Integer userId) {
-        Optional<Company> companyOptional = companyDao.findById(companyId);
+    public TianYanChaInfo getTianYanChaInfo(String companyName,Integer userId){
+        TianYanChaInfo tianYanChaInfo = new TianYanChaInfo();
+        Optional<TianYanChaInfo> byName = tianYanChaInfoDao.findByName(companyName);
+        if(byName.isPresent()){
+            tianYanChaInfo = byName.get();
+            String updateTime = tianYanChaInfo.getUpdateTime();
+            Date day = Calendar.getInstance().getTime();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            String format = sdf.format(day);
+            if(StringUtils.isNotBlank(updateTime) && format.equals(updateTime.substring(0,10))){
+                return tianYanChaInfo;
+            }
+        }
+        Map<String, String> paramMap = Maps.newHashMap();
+        paramMap.put("name",companyName);
+        String dataStr = requestTianYanChaAPI(paramMap,"/services/open/cb/ic/2.0?");
+        JSONObject jsonObject = JSONObject.parseObject(dataStr);
+
+        JSONObject result = jsonObject.getJSONObject("result");
+        if(result==null){
+            return null;
+        }
+        String creditCode = result.getString("creditCode");
+        String industry = result.getString("industry");
+        String id = result.getString("id");
+        String fromTime = result.getString("fromTime");
+        String toTime = result.getString("toTime");
+        String name = result.getString("name");
+        String companyOrgType = result.getString("companyOrgType");
+        String estiblishTime = result.getString("estiblishTime");
+        String regLocation = result.getString("regLocation");
+        String amomon = result.getString("regCapital");
+        String legalPersonName = result.getString("legalPersonName");
+        CompanyExtendInfo companyExtendInfo = new CompanyExtendInfo();
+        companyExtendInfo.setCreditCode(creditCode);
+        companyExtendInfo.setExtendInfo(dataStr);
+        companyExtendInfo.setCompanyName(name);
+        companyExtendInfo.setSourceType("tianyanchaSearch");
+        companyExtendInfo.setUpdateby(userId);
+        companyExtendInfo.setUpdateTime(new Timestamp(System.currentTimeMillis()));
+        companyExtendInfoDao.saveAndFlush(companyExtendInfo);
+
+        tianYanChaInfo.setIndustry(industry);
+        tianYanChaInfo.setId(id);
+        tianYanChaInfo.setFromTime(fromTime);
+        tianYanChaInfo.setToTime(toTime);
+        tianYanChaInfo.setName(name);
+        tianYanChaInfo.setCompanyorgtype(companyOrgType);
+        tianYanChaInfo.setRegcapital(amomon);
+        tianYanChaInfo.setEstiblishtime(estiblishTime);
+        tianYanChaInfo.setReglocation(regLocation);
+        tianYanChaInfo.setGsCreditcode(creditCode);
+        tianYanChaInfo.setDsCreditcode(creditCode);
+        tianYanChaInfo.setRegCredidtcode(creditCode);
+        tianYanChaInfo.setRegtCredidtcode(creditCode);
+        tianYanChaInfo.setCreditCode(creditCode);
+        tianYanChaInfo.setLegalPersonName(legalPersonName);
+        String format = DateFormatUtils.format(System.currentTimeMillis(), "yyyy-MM-dd HH:mm:ss");
+        tianYanChaInfo.setUpdateTime(format);
+        return tianYanChaInfoDao.saveAndFlush(tianYanChaInfo);
+
+    }
+
+    public TianYanChaInfo getTianYanChaInfo(Integer companyId,Integer userId,String companyName) {
+        Optional<Company> companyOptional = null;
+        if(null == companyId){
+            companyOptional = companyDao.findByCompanyName(companyName);
+        }else{
+            companyOptional = companyDao.findById(companyId);
+        }
         Company company = CommonUtils.getCompanyValue(companyOptional);
         if(company==null||StringUtils.isBlank(company.getCreditCode())){
             return null;
         }
         TianYanChaInfo tianYanChaInfo = new TianYanChaInfo();
-        Optional<TianYanChaInfo> tianYanChaInfoOptional = tianYanChaInfoDao.findByCreditCode(company.getCreditCode());
+        Optional<TianYanChaInfo> tianYanChaInfoOptional = null;
+        if(null == companyId){
+            tianYanChaInfoOptional = tianYanChaInfoDao.findByName(company.getCompanyName());
+        }else{
+            tianYanChaInfoOptional = tianYanChaInfoDao.findByCreditCode(company.getCreditCode());
+        }
         if(tianYanChaInfoOptional.isPresent()){
             tianYanChaInfo = tianYanChaInfoOptional.get();
             String updateTime = tianYanChaInfo.getUpdateTime();
@@ -790,7 +1032,6 @@ public class CompanyService {
                 return tianYanChaInfo;
             }
         }
-  ;
         Map<String, String> paramMap = Maps.newHashMap();
         paramMap.put("name",company.getCompanyName());
         String dataStr = requestTianYanChaAPI(paramMap,"/services/open/cb/ic/2.0?");
@@ -873,7 +1114,8 @@ public class CompanyService {
         if(StringUtils.isNotBlank(reportType)){
             return reportDao.findAllByCreditCodeAndAndReportTypeOrderByUpdateTimeDesc(company.getCreditCode(), reportType);
         }else {
-            return reportDao.findAllByCreditCodeOrderByUpdateTimeDesc(company.getCreditCode());
+          //  return reportDao.findAllByCreditCodeOrderByUpdateTimeDesc(company.getCreditCode());
+            return commonsMapper.getAllHistoricalReport(company.getCreditCode());
         }
 
     }
@@ -1098,7 +1340,7 @@ public class CompanyService {
         if(StringUtils.isBlank(companyName)){
             return null;
         }
-        Optional<Company> companyInfo = companyDao.findByCompanyName(companyName);
+        Optional<Company> companyInfo = companyDao.findTop1ByCompanyName(companyName);
         if(companyInfo.isPresent()){
             return companyInfo.get();
         }
@@ -1190,6 +1432,36 @@ public class CompanyService {
      */
     public String getCompanyStatus(String companyCode){
         return commonsMapper.getCompanyStatus(companyCode);
+    }
+
+
+    public List<CompayNameCode> getCompayNameAndCreditCode(){
+        return commonsMapper.getCompayNameAndCreditCode();
+    }
+
+    /**
+     *  关注下发接口使用
+     * @param companyName
+     * @param userId
+     * @return
+     */
+    public  Company  creditCompany(String companyName,Integer userId){
+        TianYanChaInfo tianYanChaInfo = getTianYanChaInfo(companyName, userId);
+        if(null == tianYanChaInfo || null == tianYanChaInfo.getCreditCode()){
+            return null;
+        }
+        Company company = new Company();
+        company.setId(Long.parseLong(tianYanChaInfo.getId()));
+        company.setCompanyName(companyName);
+        company.setCreditCode(tianYanChaInfo.getCreditCode());
+        company.setBuildDate(tianYanChaInfo.getEstiblishtime());
+        company.setOperName(tianYanChaInfo.getLegalPersonName());
+        company.setRegistCapi(tianYanChaInfo.getRegcapital());
+        company.setRegistAddress(tianYanChaInfo.getReglocation());
+        company.setEntType(tianYanChaInfo.getCompanyorgtype());
+        company.setUpdateTime(new Timestamp(System.currentTimeMillis()));
+        companyDao.saveAndFlush(company);
+        return company;
     }
 
 }

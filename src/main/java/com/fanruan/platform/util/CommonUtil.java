@@ -18,4 +18,13 @@ public class CommonUtil {
 //  public static final String TIAN_YAN_CHA_AUTHID = "42515";
   public static final String TIAN_YAN_CHA_AUTHID = "lf2b4yqy4lsfgp1x";
 
+  // tian yan cha  jian kong jiekou
+  public static final String TIAN_YAN_CHA_MONITORING_USERNAME = "datafeed201912251150";
+  public static final String TIAN_YAN_CHA_MONITORING_AUTHID = "50026";
+  public static final String TIAN_YAN_CHA_MONITORING_KEY = "af548788-67aa-4bf6-880f-7d0ca445e873";
+
+  // zhong chen xin jian kong jiekou
+  public static final String ZHONG_CHEN_XIN_MONITORING_API_KEY = "c11e09663ffa47adbac90fbd73f56f7e";
+  public static final String ZHONG_CHEN_XIN_MONITORING_ACOUNT = "zjgmapi";
+
 }

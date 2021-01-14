@@ -41,6 +41,7 @@
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/sinosure/exchange/edi/service/GetEdiOverdueReceip.java
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/sinosure/exchange/edi/service/DoEdiBuyerCodeApprove.java
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/sinosure/exchange/edi/po/ObjectFactory.java
+/Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/fanruan/platform/bean/RealTimeWarning.java
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/sinosure/exchange/edi/service/DoEdiDomDeclareSupplementApply.java
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/fanruan/platform/dao/OpenAPITokenDao.java
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/sinosure/exchange/edi/service/DoEdiInfoQuery.java
@@ -108,6 +109,7 @@
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/sinosure/exchange/edi/service/DoEdiPolicyConfirm.java
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/sinosure/exchange/edi/po/ContractApplyInfo.java
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/sinosure/exchange/edi/po/BusinessInfo.java
+/Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/fanruan/platform/bean/RiskMorningPost.java
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/sinosure/exchange/edi/po/ArrayOfEdiExpObject.java
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/sinosure/exchange/sedi3/po/EdiExpObject.java
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/fanruan/platform/util/TokenUtil.java
@@ -148,6 +150,7 @@
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/sinosure/exchange/edi/service/GetQuotaBalanceInfoResponse.java
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/fanruan/platform/interceptor/TokenInterceptor.java
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/fanruan/platform/util/PasswordEncoder.java
+/Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/fanruan/platform/bean/MorningNews.java
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/sinosure/exchange/edi/po/DomDeclareApproveInfo.java
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/sinosure/exchange/edi/po/BuyerCodeApproveInfo.java
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/sinosure/exchange/edi/po/FeeNoticeShipmentInfo.java
@@ -206,6 +209,7 @@
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/fanruan/platform/dao/BlackPushDao.java
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/sinosure/exchange/edi/service/GetEdiQuotaPreRevocationInfo.java
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/sinosure/exchange/edi/service/DoEdiDomPlnoticeResponse.java
+/Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/fanruan/platform/bean/PlatformNews.java
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/sinosure/exchange/edi/po/ArrayOfSupplementInfo.java
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/sinosure/exchange/edi/po/ArrayOfQuotaBackApproveInfo.java
 /Users/chengbin/Downloads/国贸/代码/credit-sharing-platformdev/src/main/java/com/sinosure/exchange/edi/po/ArrayOfRatingInfo.java

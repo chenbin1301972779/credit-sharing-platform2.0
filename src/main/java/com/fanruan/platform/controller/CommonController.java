@@ -186,6 +186,9 @@ public class CommonController {
         List<BlackList> blackList = commonService.getBlackList(userCode);
         for (BlackList blackInfo : blackList ){
             isBlack = blackInfo.getCode().equals(code);
+            if(isBlack){
+                break;
+            }
         }
         hs.put("isBlack",isBlack);
         hs.put("code",0);
@@ -789,4 +792,87 @@ public class CommonController {
         return objectMapper.writeValueAsString(hs);
     }
 
+
+    @RequestMapping(value = "/common/getEventTypeList", method = RequestMethod.POST)
+    @ResponseBody
+    public String getEventTypeList(@RequestBody Map<String,Object> param) throws JsonProcessingException{
+        HashMap<String,Object> hs = new HashMap<>();
+        ObjectMapper objectMapper = new ObjectMapper();
+        String userName = (String) param.get("userName");
+        List<String> riskleve = ( ArrayList<String>) param.get("riskleve");
+        List<String> companyName = ( ArrayList<String>) param.get("companyName");
+        String startDate = (String) param.get("startDate");
+        String endDate = (String) param.get("endDate");
+        List<String> eventTypeList = commonService.getEventTypeList(userName,riskleve,companyName,startDate,endDate);
+        hs.put("code", "0");
+        hs.put("msg", "");
+        hs.put("eventTypeList", eventTypeList);
+        return objectMapper.writeValueAsString(hs);
+    }
+
+
+    @RequestMapping(value = "/common/getRealTimeWarning", method = RequestMethod.POST)
+    @ResponseBody
+    public String getRealTimeWarning(@RequestBody Map<String,Object> param) throws JsonProcessingException{
+        HashMap<String,Object> hs = new HashMap<>();
+        ObjectMapper objectMapper = new ObjectMapper();
+        String userName = (String) param.get("userName");
+        List<String> riskleve = ( ArrayList<String>) param.get("riskleve");
+        List<String> companyName = ( ArrayList<String>) param.get("companyName");
+        List<String> eventType = ( ArrayList<String>) param.get("eventType");
+        String startDate = (String) param.get("startDate");
+        String endDate = (String) param.get("endDate");
+        Integer pageIndex = CommonUtils.getIntegerValue(param.get("pageIndex"));
+        Integer pageSize = CommonUtils.getIntegerValue(param.get("pageSize"));
+        hs = commonService.getRealTimeWarning(hs,userName,riskleve,companyName,eventType,startDate,endDate,pageIndex,pageSize);
+        return objectMapper.writeValueAsString(hs);
+    }
+
+    @RequestMapping(value = "/common/getPlatformNews", method = RequestMethod.POST)
+    @ResponseBody
+    public String getPlatformNews(@RequestBody Map<String,Object> param) throws JsonProcessingException{
+        HashMap<String,Object> hs = new HashMap<>();
+        ObjectMapper objectMapper = new ObjectMapper();
+        String userName = (String) param.get("userName");
+        String startDate = (String) param.get("startDate");
+        String endDate = (String) param.get("endDate");
+        Integer pageIndex = CommonUtils.getIntegerValue(param.get("pageIndex"));
+        Integer pageSize = CommonUtils.getIntegerValue(param.get("pageSize"));
+        hs = commonService.getPlatformNews(hs,userName,startDate,endDate,pageIndex,pageSize);
+        return objectMapper.writeValueAsString(hs);
+    }
+
+
+    @RequestMapping(value = "/common/getRiskMorningPost", method = RequestMethod.POST)
+    @ResponseBody
+    public String getRiskMorningPost(@RequestBody Map<String,Object> param) throws JsonProcessingException{
+        HashMap<String,Object> hs = new HashMap<>();
+        ObjectMapper objectMapper = new ObjectMapper();
+        String userName = (String) param.get("userName");
+        List<String> riskleve = ( ArrayList<String>) param.get("riskleve");
+        List<String> companyName = ( ArrayList<String>) param.get("companyName");
+        String startDate = (String) param.get("startDate");
+        String endDate = (String) param.get("endDate");
+        Integer pageIndex = CommonUtils.getIntegerValue(param.get("pageIndex"));
+        Integer pageSize = CommonUtils.getIntegerValue(param.get("pageSize"));
+        hs = commonService.getRiskMorningPost(hs,userName,riskleve,companyName,startDate,endDate,pageIndex,pageSize);
+        return objectMapper.writeValueAsString(hs);
+    }
+
+    @RequestMapping(value = "/common/getMorningNews", method = RequestMethod.POST)
+    @ResponseBody
+    public String getMorningNews(@RequestBody Map<String,Object> param) throws JsonProcessingException{
+        HashMap<String,Object> hs = new HashMap<>();
+        ObjectMapper objectMapper = new ObjectMapper();
+        String userName = (String) param.get("userName");
+        List<String> riskleve = ( ArrayList<String>) param.get("riskleve");
+        List<String> companyName = ( ArrayList<String>) param.get("companyName");
+        List<String> newsEmotion = ( ArrayList<String>) param.get("newsEmotion");
+        String startDate = (String) param.get("startDate");
+        String endDate = (String) param.get("endDate");
+        Integer pageIndex = CommonUtils.getIntegerValue(param.get("pageIndex"));
+        Integer pageSize = CommonUtils.getIntegerValue(param.get("pageSize"));
+        hs = commonService.getMorningNews(hs,userName,riskleve,companyName,newsEmotion,startDate,endDate,pageIndex,pageSize);
+        return objectMapper.writeValueAsString(hs);
+    }
 }

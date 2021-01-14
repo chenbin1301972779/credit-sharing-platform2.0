@@ -8,4 +8,5 @@ import java.util.Optional;
 
 public interface BlackInfoDao  extends JpaRepository<BlackInfo,Integer> {
     Optional<BlackInfo> findByPid(String code);
+    Optional<BlackInfo> findByEntNameAndCodeAndUpdateBy(String entName,String code,String updateBy);
 }

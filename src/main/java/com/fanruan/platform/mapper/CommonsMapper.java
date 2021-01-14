@@ -55,4 +55,22 @@ public interface CommonsMapper {
     List<BlacklistResultList> getBlacklistApprovalList(@Param(value="status") List<Integer> status,@Param(value="pageIndex") Integer pageIndex,@Param(value="pageSize") Integer pageSize,@Param(value="userName") String userName);
     Integer getBlacklistApprovalListCount(@Param(value="status") List<Integer> status,@Param(value="pageIndex") Integer pageIndex,@Param(value="pageSize") Integer pageSize,@Param(value="userName") String userName);
     List<BlacklistResultList> getBlacklistApprovalExcel(@Param(value="status") List<Integer> status,@Param(value="pageIndex") Integer pageIndex,@Param(value="pageSize") Integer pageSize,@Param(value="userName") String userName);
+    /**消息中心 实时预警 获取企业名称列表*/
+    List<String> getCompayNameList(@Param(value="userName") String userName);
+    /**消息中心 实时预警 获取事件类型列表*/
+    List<String> getEventTypeList(@Param(value="userName") String userName, @Param(value="riskleve") List<String> riskleve,@Param(value="companyName")  List<String> companyName,@Param(value="startDate") String startDate,@Param(value="endDate") String endDate);
+    /**消息中心 实时预警 列表数据*/
+    List<RealTimeWarning> getRealTimeWarning(@Param(value="userName") String userName, @Param(value="riskleve") List<String> riskleve,@Param(value="companyName")  List<String> companyName,@Param(value="eventType")  List<String> eventType,@Param(value="startDate") String startDate,@Param(value="endDate") String endDate,@Param(value="pageIndex") Integer pageIndex,@Param(value="pageSize") Integer pageSize);
+    Integer getRealTimeWarningCount(@Param(value="userName") String userName, @Param(value="riskleve") List<String> riskleve,@Param(value="companyName")  List<String> companyName,@Param(value="eventType")  List<String> eventType,@Param(value="startDate") String startDate,@Param(value="endDate") String endDate,@Param(value="pageIndex") Integer pageIndex,@Param(value="pageSize") Integer pageSize);
+    /**消息中心 风险早报 and 新闻早报获取企业名称*/
+    List<String> getZCXCompayNameList(@Param(value="userName") String userName);
+    /**消息中心 平台消息*/
+    List<PlatformNews> getPlatformNews(String userName, String startDate, String endDate, Integer pageIndex, Integer pageSize);
+    Integer getPlatformNewsCount(String userName, String startDate, String endDate, Integer pageIndex, Integer pageSize);
+    /**消息中心 风险早报*/
+    List<RiskMorningPost> getRiskMorningPost(String userName, List<String> riskleve, List<String> companyName, String startDate, String endDate, Integer pageIndex, Integer pageSize);
+    Integer getRiskMorningPostCount(String userName, List<String> riskleve, List<String> companyName, String startDate, String endDate, Integer pageIndex, Integer pageSize);
+    /**消息中心 新闻早报*/
+    List<MorningNews> getMorningNews(String userName, List<String> riskleve, List<String> companyName, List<String> newsEmotion, String startDate, String endDate, Integer pageIndex, Integer pageSize);
+    Integer getMorningNewsCount(String userName, List<String> riskleve, List<String> companyName, List<String> newsEmotion, String startDate, String endDate, Integer pageIndex, Integer pageSize);
 }

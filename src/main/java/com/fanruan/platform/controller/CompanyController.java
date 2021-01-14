@@ -603,4 +603,63 @@ public class CompanyController {
         return objectMapper.writeValueAsString(hs);
     }
 
+
+    @RequestMapping(value = "/company/getCompanyStatus", method = RequestMethod.POST)
+    @ResponseBody
+    public String getCompanyStatus(@RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String, Object> hs = new HashMap<>();
+        ObjectMapper objectMapper=new ObjectMapper();
+        String compayName = (String) param.get("companyName");
+        String creditCode = (String) param.get("creditCode");
+        String updateBy = (String) param.get("updateBy");
+        String status = "";
+        Optional<BlackInfo> blackInfo = companyService.getCompanyStatus(compayName,creditCode,updateBy);
+        if(blackInfo.isPresent()){
+            BlackInfo bInfo = blackInfo.get();
+            status = bInfo.getStatus();
+        }
+        hs.put("code",0);
+        hs.put("msg","");
+        hs.put("status",status);
+        return objectMapper.writeValueAsString(hs);
+    }
+
+
+    @RequestMapping(value = "/company/getCompayNameList", method = RequestMethod.POST)
+    @ResponseBody
+    public String getCompayNameList(@RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String, Object> hs = new HashMap<>();
+        ObjectMapper objectMapper=new ObjectMapper();
+        String userName = (String) param.get("userName");
+        if(StringUtils.isBlank(userName)){
+            hs.put("code",1);
+            hs.put("msg","企业名称列表获取失败,用户名不能为空！");
+            hs.put("companyNameList","");
+            return objectMapper.writeValueAsString(hs);
+        }
+        List<String> companyNameList = companyService.getCompanyNameList(userName);
+        hs.put("code",0);
+        hs.put("msg","");
+        hs.put("companyNameList",companyNameList);
+        return objectMapper.writeValueAsString(hs);
+    }
+
+    @RequestMapping(value = "/company/getZCXCompayNameList", method = RequestMethod.POST)
+    @ResponseBody
+    public String getZCXCompayNameList(@RequestBody Map<String,Object> param) throws JsonProcessingException {
+        HashMap<String, Object> hs = new HashMap<>();
+        ObjectMapper objectMapper=new ObjectMapper();
+        String userName = (String) param.get("userName");
+        if(StringUtils.isBlank(userName)){
+            hs.put("code",1);
+            hs.put("msg","企业名称列表获取失败,用户名不能为空！");
+            hs.put("companyNameList","");
+            return objectMapper.writeValueAsString(hs);
+        }
+        List<String> companyNameList = companyService.getZCXCompayNameList(userName);
+        hs.put("code",0);
+        hs.put("msg","");
+        hs.put("companyNameList",companyNameList);
+        return objectMapper.writeValueAsString(hs);
+    }
 }

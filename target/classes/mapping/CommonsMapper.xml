@@ -975,5 +975,3490 @@
 
     </select>
 
+    <resultMap id="getCompayNameListResultMap" type="java.lang.String">
+        <result column="entName" jdbcType="VARCHAR" property="entName" />
+    </resultMap>
+    <select id="getCompayNameList" resultType="java.lang.String">
+      SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN
+       WHERE CONCERN_FLAG=1
+        AND
+        UPDATEBY= #{userName}
+    </select>
+
+    <resultMap id="getEventTypeListResultMap" type="java.lang.String">
+        <result column="TYPENAME" jdbcType="VARCHAR" property="TYPENAME" />
+    </resultMap>
+    <select id="getEventTypeList" resultType="java.lang.String">
+             select distinct TYPENAME from ODS_TYC_PUSHSTRUCT P
+              LEFT JOIN ODS_TYC_TYPE T ON P.TYPEA=T.TYPE
+              WHERE COMPANYNAME in
+              (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY = #{userName})
+                <if test="riskleve != null and riskleve.size > 0">
+                    and RISKLEVEL in
+                    <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+                </if>
+                <if test="companyName != null and companyName.size > 0">
+                    and COMPANYNAME in
+                    <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                        #{item}
+                    </foreach>
+                </if>
+              AND TO_CHAR(UPDATETIME,'YYYY-MM-DD')
+              BETWEEN #{startDate} AND #{endDate}
+    </select>
+
+
+    <resultMap id="getRealTimeWarningResultMap" type="com.fanruan.platform.bean.RealTimeWarning">
+        <result column="typea" jdbcType="INTEGER" property="typea" />
+        <result column="typeName" jdbcType="VARCHAR" property="typeName" />
+        <result column="companyGid" jdbcType="VARCHAR" property="companyGid" />
+        <result column="companyName" jdbcType="VARCHAR" property="companyName" />
+        <result column="riskLevel" jdbcType="VARCHAR" property="riskLevel" />
+        <result column="updateTime" jdbcType="VARCHAR" property="updateTime" />
+        <result column="A" jdbcType="VARCHAR" property="A" />
+        <result column="B" jdbcType="VARCHAR" property="B" />
+        <result column="URL" jdbcType="VARCHAR" property="URL" />
+    </resultMap>
+    <select id="getRealTimeWarning" resultType="com.fanruan.platform.bean.RealTimeWarning">
+
+        WITH ds1 as(SELECT
+        TYPEA,
+        '工商变更' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '变更事项:'||to_clob(CHANGEITEM)||';   变更前:'||to_clob(CONTENTBEFORE)||';   变更后:'||to_clob(CONTENTAFTER) as A,
+        '变更时间:'||TO_CHAR(CHANGETIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=11
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '上市公告' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '公告标题:'||to_clob(ANNOUNCEMENTTITLE) as A,
+        '公告时间:'||TO_CHAR(ANNOUNCEMENTTIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=13
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '融资历史' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '投资企业:'||to_clob(INVESTORNAME)||';   金额:'||to_clob(MONEY)||';   投资公司:'||to_clob(ORGANIZATIONNAME)||';   轮次:'||to_clob(ROUND) as A,
+        '融资时间:'||TO_CHAR("DATE" /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01','YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=21
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '核心团队' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        to_clob(TITLE)||':'||to_clob(NAME) as A,
+        "DESC" as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=22
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '企业业务' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '产品:'||to_clob(PRODUCT)||';   业务:'||to_clob(YEWU)||';   行业:'||to_clob(HANGYE) as A,
+        '介绍:'||INTRO as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=23
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '投资事件' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '投资公司:'||to_clob(ORGANIZATIONNAME)||';   地区:'||to_clob(LOCATION)||';   业务范围:'||to_clob(YEWU)||';   行业:'||to_clob(HANGYE1)||';   产品名:'||to_clob(PRODUCT)||';   金额:'||to_clob(MONEY)||';   轮次:'||to_clob(LUNCI) as A,
+        '投资时间:'||TO_CHAR(TZDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=24
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '裁判文书' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '标题:《'||TITLE||'》;   案件类型:'||CASETYPE||';   案号:'||CASENO||';   法院:'||COURT||';   案由:'||to_clob(CASEREASON) as A,
+        '发布时间:'||TO_CHAR(SUBMITTIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        URL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=31
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '法院公告' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '公告类型:'||to_clob(BLTNTYPENAME)||';   案件内容:'||to_clob(CONTENT)||';   法院:'||to_clob(COURTCODE)||';   原因:'||to_clob(REASON) as A,
+        '刊登日期:'||TO_CHAR(PUBLISHDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        URL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=32
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '失信被执行人' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '失信人名称:'||to_clob(INAME)||';   执行依据文号:'||GISTID||';   法院:'||COURTNAME||';   生效法律文书确定的义务:'||to_clob(DUTY)||';   履行情况:'||to_clob(PERFORMANCE) as A,
+        '发布日期:'||TO_CHAR(PUBLISHDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=33
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '被执行人' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '案号:'||CASECODE||';   执行法院:'||EXECCOURTNAME||';   被执行人名称:'||PNAME||';   执行标的:'||to_clob(EXECMONEY) as A,
+        '创建时间:'||TO_CHAR(CASECREATETIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=34
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '开庭公告' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '案号:'||CASEREASON2||';   法院:'||COURT||';   原告/上诉人:'||PLAINTIFF||';   被告/被上诉人:'||DEFENDANT||';   案由'||to_clob(CASEREASON) as A,
+        '开庭日期:'||TO_CHAR(STARTDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=35
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '司法协助' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '执行通知书文号:'||EXECUTENOTICENUM||';   类型/状态:'||TYPESTATE||';   执行法院:'||to_clob(EXECUTIVECOURT)||';   被执行人:'||EXECUTEDPERSON||';   股权数额'||EQUITYAMOUNT as A,
+        null as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=36
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '经营异常' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '列入部门:'||PUTDEPARTMENT||';   列入原因:'||to_clob(PUTREASON)||';   移除部门:'||REMOVEDEPARTMENT||';   移除原因:'||to_clob(REMOVEREASON) as A,
+        '列入日期:'||TO_CHAR(PUTDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||';    移除日期:'||TO_CHAR(REMOVEDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=41
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '行政处罚(工商局)' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '定书文号:'||PUNISHNUMBER||';   行政处罚内容:'||to_clob(CONTENT)||';   描述:'||to_clob(DESCRIPTION)||';   违法行为类型:'||"TYPE" as A,
+        '决定日期:'||TO_CHAR(DECISIONDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=42
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '严重违法' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '列入部门:'||PUNISHNUMBER||';   列入原因:'||to_clob(PUTREASON)||';   移除部门:'||REMOVEDEPARTMENT||';   移除原因:'||to_clob(REMOVEREASON) as A,
+        '列入日期:'||TO_CHAR(PUTDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||';    移除日期:'||TO_CHAR(REMOVEDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=43
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '股权出质' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '注册号:'||REGNUMBER||';   出质人:'||PLEDGOR||';   质权人:'||to_clob(PLEDGEE)||';   出质股权数额:'||EQUITYAMOUNT||';   状态:'||STATE as A,
+        '股权出质设立登记日期:'||TO_CHAR(REGDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||';    股权出质设立发布日期:'||TO_CHAR(PUTDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=44
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '欠税公告' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '纳税人识别号:'||TAXIDNUMBER||';   法人或负责人名称:'||to_clob(LEGALPERSONNAME)||';   纳税人类型:'||TAXPAYERTYPE||';   税务类型:'||"TYPE"||';   欠税税种:'||TAXCATEGORY||';   欠税金额:'||OWNTAXAMOUNT||';   欠税余额:'||OWNTAXBALANCE||';   当前新发生欠税余额:'||NEWOWNTAXBALANCE as A,
+        '发布时间:'||TO_CHAR(PUBLISHDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=46
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '司法拍卖' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '标题:'||TITLE||';   描述:'||to_clob(INTRODUCTION)||';   详细内容:'||to_clob(DETAIL) as A,
+        '公告日期:'||TO_CHAR(PUBTIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        URL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=47
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '清算信息' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '清算组负责人:'||to_clob(MANAGER)||';   清算成员名称:'||MEMBER as A,
+        null as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=48
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '知识产权出质' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '知识产权登记证号:'||CERTIFICATENUM||';   种类:'||"TYPE"||';   出质人名称:'||to_clob(PLEDGOR)||';   质权人名称:'||PLEDGEE||';   状态:'||STATE as A,
+        '公示日期:'||TO_CHAR(PUBLICITYDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=49
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+
+        UNION ALL
+
+        SELECT
+        TYPEA,
+        '行政处罚【信用中国】' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '区域:'||AREANAME||';   处罚事由:'||to_clob(REASON)||';    处罚结果:'||to_clob(RESULT)||';   决定机关:'||DEPARTMENTNAME as A,
+        '决定日期:'||TO_CHAR(DECISIONDATE/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=410
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+
+        SELECT
+        TYPEA,
+        '招投标' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '标题:'||TITLE||';   正文简介:'||to_clob(INTRO)||';    采购人:'||PURCHASER||';   代理机构:'||PROXY as A,
+        '发布时间:'||TO_CHAR(PUBLISHTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=51
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+
+        SELECT
+        TYPEA,
+        '债券信息' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '债券名称:'||to_clob(BONDNAME)||';   债券代码:'||BONDNUM||';    债券类型 :'||BONDTYPE||';   计息方式 :'||CALINTERESTTYPE||'; 债项评级:'||DEBTRATING||'; 信用评级机构:'||CREDITRATINGGOV
+        ||'; 托管机构:'||ESCROWAGENT||'; 行权类型:'||EXERIGHTTYPE||'; 票面利率(%):'||FACEINTERESTRATE||'; 面值:'||FACEVALUE||';  流通范围: '||FLOWRANGE||'; 发行价格(元):'||ISSUEDPRICE||'; 付息频率:'||PAYINTERESTHZ
+        ||'; 实际发行量(亿) :'||REALISSUEDQUANTITY||'; 发行人:'||PUBLISHERNAME||'; 债券起息日'
+        as A,
+        '上市交易日:'||TO_CHAR(BONDTRADETIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||
+        '; 行权日期:'||TO_CHAR(EXERIGHTTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||
+        '; 债劵到期日:'||TO_CHAR(PUBLISHEXPIRETIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||
+        '; 债劵发行日:'||TO_CHAR(PUBLISHTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||
+        '; 债券起息日:'||TO_CHAR(STARTCALINTERESTTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        BIDURL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=52
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+
+        SELECT
+        TYPEA,
+        '购地信息' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '宗地位置:'||To_clob(LOCATION)||';   供地总面积(公顷):'||TOTALAREA||';    成交价款（万元） :'||DEALPRICE||';   供应方式 :'||SUPPLYWAY||'; 土地用途:'||PURPOSE||'; 受让人:'||ASSIGNEE
+        ||'; 上级公司:'||PARENTCOMPANY
+        as A,
+        '约定竣工时间:'||TO_CHAR(ENDTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        LINKURL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=53
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '税务评级' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '纳税人识别号:'||to_clob(NUMBER2)||';   纳税等级:'||GRADE||';    类别:'||CASE TYPE WHEN '0' THEN '国税' ELSE '地税' END||';   评价单位 :'||EVALDEPARTMENT
+        as A,
+        '年份:'||YEAR
+        as B,
+        LINKURL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=55
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+
+        SELECT
+        TYPEA,
+        '抽查检查' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '结果:'||to_clob(CHECKRESULT)||';   类型:'||CHECKTYPE||';    实施机关:'||CHECKORG
+        as A,
+        '日期:'||TO_CHAR(CHECKDATE/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=56
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+
+        SELECT
+        TYPEA,
+        '产品信息' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '产品名:'||NAME||';   描述:'||to_clob(BRIEF)||';    产品分类:'||TYPE||'; 领域'||CLASSES
+        as A,
+        NULL
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=57
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+
+        SELECT
+        TYPEA,
+        '行政许可【工商局】' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '许可证号:'||NUMBER2||';   许可证名称:'||NAME||';    等级:'||GRADE||'; 范围'||to_clob(SCOPE)||'; 证书状态 '||STATE||'; 发证机关'||DEPARTMENT
+        as A,
+        '起始日期:'||FROMDATE||'; 到期日期'||TODATE
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=511
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '行政许可【信用中国】' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '许可证号:'||NUMBER2||';   内容许可:'||to_clob(CONTENT)||';    许可机关:'||DEPARTMENT||'; 审核类型'||AUDITYPE||'; 证书状态 '||STATE||'; 许可机关'||DEPARTMENT
+        as A,
+        '许可决定日期:'||TO_CHAR(DECISIONDATE/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||'; 许可截止日期'||TO_CHAR(ENDDATE/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=512
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '商标信息' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '国际分类code:'||TMCLASS||';   商标名称:'||to_clob(TMNAME)||';    状态:'||STATUS||';  国际分类'||INTCLS||'; 商标状态 '||CATEGORY||'; 商标图片'||TMPIC||'; 注册号'||REGNO||';  申请人'||APPLICANTCN
+        as A,
+        '申请日期:'||TO_CHAR(APPDATE/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=61
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '专利信息' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '专利名称:'||PATENTNAME||';   专利类型:'||PATENTTYPE||';    摘要:'||to_clob(ABSTRACTS)||';  申请号/专利号'||PATENTNUM||';  全部分类号 '||ALLCATNUM||'; 主分类号'||MAINCATNUM||'; 发明人'||INVENTOR||';  代理人'||AGENT||'; 代理机构'||AGENCY||'; 申请人 '||APPLICANTNAME
+        as A,
+        '申请日:'||TO_CHAR(APPLICATIONTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||
+        '; 公开公告日:'||TO_CHAR(PUBDATE/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        IMGURL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=62
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '软件著作权' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '软件名称:'||to_clob(FULLNAME)||';   版本号:'||VERSION||';    著作权人(国籍):'||AUTHORNATIONALITY||';  登记号'||REGNUM||';  分类号 '||CATNUM
+        as A,
+        '首次发表时间:'||TO_CHAR(PUBLISHTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||
+        '; 登记时间:'||TO_CHAR(REGTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        IMGURL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=63
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '作品著作权' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '作品名称:'||to_clob(FULLNAME)||';   作品类别:'||TYPE||';    著作权人名称:'||AUTHORNATIONALITY||';  登记号'||REGNUM
+        as A,
+        '登记日期:'||TO_CHAR(REGTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||
+        '; 创作完成日期:'||TO_CHAR(FINISHTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=64
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '送达公告' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '公告名称:'||TITLE||';   法院名称:'||COURT||';    详情:'||to_clob(CONTENT)
+        as A,
+        '发布日期:'||TO_CHAR(STARTDATE/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=79
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '立案信息' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        ' 案号:'||CASENO||';    案件类型:'||CASETYPE||';    案件状态:'||to_clob(CASESTATUS)||'; 法院:'||COURT||';  承办部门:'||DEPARTMENT||';  承办法官:'||JUDGE||'; 原告:'||PLAINTIFF||'; 被告:'||DEFENDANT||';  第三人:'||THIRD
+        as A,
+        '立案日期:'||TO_CHAR(FILINGDATE/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||
+        '; 开庭日期:'||TO_CHAR(STARTTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||
+        ';  结束日期'||TO_CHAR(CLOSEDATE/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=80
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '税收违法' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '纳税人名称:'||TAXPAYERNAME||';    违法情况:'||to_clob(CASEINFO)||';    案件性质:'||CASETYPE||';  纳税人识别号:'||TAXPAYERNUMBER||';  所属税务机关:'||DEPARTMENT||';  组织机构代码:'||TAXPAYERCODE
+        as A,
+        NULL
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE  TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=81
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '简易注销' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        ' 统一社会信用代码:'||CREDITCODE||';    登记机关:'||to_clob(REGAUTHORITY)||';    公告期:'||ANNOUNCEMENTTERM
+        as A,
+        NULL
+        as B,
+        INVESTORCOMMITMENTDOWNLOADURL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=82
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '环保处罚' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        ' 处罚结果:'||EXECUTION||';    处罚单位:'||PUNISHDEPARTMENT||';    处罚事由:'||to_clob(PUNISHREASON)||'; 处罚依据:'||to_clob(PUNISHBASIS)||';  违反法律:'||to_clob(LAWBREAKING)||';  决定文书号:'||PUNISHNUMBER
+        as A,
+        '处罚日期:'||TO_CHAR(PUBLISHTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=83
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '公示催告' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '票据号:'||BILLNUM||';    票据类型:'||BILLTYPE||';    票面金额:'||BILLAMT||'; 持票人:'||OWNERCOMPANYNAME||';   出票人:'||DRAWCOMPANYNAME||';   付款银行:'||PAYCOMPANYNAME||'; 公告内容:'||to_clob(INFODETAIL)
+        as A,
+        '出票日:'||TO_CHAR(BILLBEGINDT/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        ||'到期日 :'||TO_CHAR(BILLENDDT/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        ||'公告日期:'||TO_CHAR(PUBLISHDT/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=84
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '土地抵押' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '抵押面积(公顷):'||MORTGAGEAREA||';    票据类型:'||BILLTYPE||';    票面金额:'||BILLAMT||'; 持票人:'||OWNERCOMPANYNAME||';   出票人:'||DRAWCOMPANYNAME||';   付款银行:'||PAYCOMPANYNAME||'; 公告内容:'||to_clob(INFODETAIL)
+        as A,
+        '出票日:'||TO_CHAR(BILLBEGINDT/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        ||'到期日 :'||TO_CHAR(BILLENDDT/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        ||'公告日期:'||TO_CHAR(PUBLISHDT/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=85
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '土地转让' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '土地面积(公顷):'||AREA||';    土地级别:'||LEVEL3||';    原土地使用权人:'||USERCHANGEPRE||'; 转让方式:'||to_clob(MERCHANDISETYPE)||';    土地使用权类型:'||USETYPE||';   土地使用年限:'||PAYCOMPANYNAME||'; 转让价格(万元）:'||MERCHANDISPRICE||'; 现土地使用权人:'||USERCHANGENOW||';  土地用途:'||USEFUL||'; 土地利用状况:'||SITUATION
+        as A,
+        '成交日期:'||TO_CHAR(MERCHANDISETIMECLEAN/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=86
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '地块公示' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '项目名称'||PROJECTNAME||'土地面积(公顷):'||LANDAREA||';    地块位置:'||LANDLOCATION||';     受让单位:'||LANDUSERIGHTPERSON||'; 土地用途:'||LANDUSEFULNESS||';    公示期:'||PUBLICANNOUNCEMENTPERIOD||';   意见反馈方式:'||to_clob(FEEDBACKMETHOD)||';  发布机关 :'||PUBLICATIONORGANIZE
+        as A,
+        '发布日期:'||TO_CHAR(PUBLICATIONDATE/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=87
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '电信许可' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '许可证号:'||LICENSENUMBER||' 业务及其覆盖范围:'||to_clob(BUSINESSSCOPE)||';    是否有效:'||ISAVAILABLE
+        as A,
+        null
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=88
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '限制消费令' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '姓名:'||XNAME||' 企业信息:'||to_clob(QYINFO)||';    是否有效:'||ISAVAILABLE
+        as A,
+        '立案日期:'||TO_CHAR(CASECREATETIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        ORIURL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=89
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '终本案件' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '案号:'||CASECODE||' 身份证号码/组织机构代码:'||PARTYCARDNUM||';     执行法院:'||to_clob(EXECCOURTNAME)||';  执行标的:'||EXECMONEY||';  未履行金额:'||NOEXECMONEY
+        as A,
+        '终本日期:'||TO_CHAR(CASEFINALTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||
+        '; 立案日期:'||TO_CHAR(CASECREATETIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        ORIURL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=90
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '大股东变更' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '现大股东名称:'||to_clob(BIGSHAREHOLDER)||' 原大股东名称:'||BIGSHAREHOLDERBEFORE
+        as A,
+        null
+        as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE  TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=116
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '股权变更' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '股东名称:'||to_clob(SHAREHOLDERNAME)||'; 原出资比例:'||PERCENTBEFORE||';     现出资比例:'||PERCENT||';  原认缴出资额:'||CAPITALBEFORE||';  现认缴出资额:'||CAPITAL
+        as A,
+        null
+        as B,
+        ORIURL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=122
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '退出对外投资' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '被投资企业名称:'||to_clob(NAME)||'; 投资数额:'||CAPITAL
+        as A,
+        null
+        as B,
+        ORIURL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=120
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '新增对外投资' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '被投资企业名称:'||to_clob(NAME)||'; 投资数额:'||CAPITAL
+        as A,
+        null
+        as B,
+        ORIURL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=121
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '新闻舆情' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '新闻标题:'||TITLE||';    来源:'||to_clob(SOURCE)
+        as A,
+        NULL as B,
+        URL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=3001
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        )
+        SELECT M.* FROM (
+        SELECT ROWNUM AS rowno,N.*
+        FROM (
+        SELECT * FROM ds1
+        where 1=1
+        <if test="eventType != null and eventType.size > 0">
+        and TYPENAME in
+        <foreach collection="eventType" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </if>
+        ORDER BY UPDATETIME DESC
+        ) N
+     )M
+        WHERE 1 = 1
+        AND rowno &lt;= #{pageIndex} * #{pageSize}
+        AND rowno &gt; (#{pageIndex}-1) * #{pageSize}
+
+    </select>
+
+
+    <resultMap id="getRealTimeWarningCountResultMap" type="java.lang.Integer">
+        <result column="co" jdbcType="VARCHAR" property="co" />
+    </resultMap>
+
+    <select id="getRealTimeWarningCount" resultType="java.lang.Integer">
+
+        WITH ds1 as(SELECT
+        TYPEA,
+        '工商变更' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '变更事项:'||to_clob(CHANGEITEM)||';   变更前:'||to_clob(CONTENTBEFORE)||';   变更后:'||to_clob(CONTENTAFTER) as A,
+        '变更时间:'||TO_CHAR(CHANGETIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=11
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '上市公告' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '公告标题:'||to_clob(ANNOUNCEMENTTITLE) as A,
+        '公告时间:'||TO_CHAR(ANNOUNCEMENTTIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=13
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '融资历史' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '投资企业:'||to_clob(INVESTORNAME)||';   金额:'||to_clob(MONEY)||';   投资公司:'||to_clob(ORGANIZATIONNAME)||';   轮次:'||to_clob(ROUND) as A,
+        '融资时间:'||TO_CHAR("DATE" /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01','YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=21
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '核心团队' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        to_clob(TITLE)||':'||to_clob(NAME) as A,
+        "DESC" as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=22
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '企业业务' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '产品:'||to_clob(PRODUCT)||';   业务:'||to_clob(YEWU)||';   行业:'||to_clob(HANGYE) as A,
+        '介绍:'||INTRO as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=23
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '投资事件' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '投资公司:'||to_clob(ORGANIZATIONNAME)||';   地区:'||to_clob(LOCATION)||';   业务范围:'||to_clob(YEWU)||';   行业:'||to_clob(HANGYE1)||';   产品名:'||to_clob(PRODUCT)||';   金额:'||to_clob(MONEY)||';   轮次:'||to_clob(LUNCI) as A,
+        '投资时间:'||TO_CHAR(TZDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=24
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '裁判文书' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '标题:《'||TITLE||'》;   案件类型:'||CASETYPE||';   案号:'||CASENO||';   法院:'||COURT||';   案由:'||to_clob(CASEREASON) as A,
+        '发布时间:'||TO_CHAR(SUBMITTIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        URL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=31
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '法院公告' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '公告类型:'||to_clob(BLTNTYPENAME)||';   案件内容:'||to_clob(CONTENT)||';   法院:'||to_clob(COURTCODE)||';   原因:'||to_clob(REASON) as A,
+        '刊登日期:'||TO_CHAR(PUBLISHDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        URL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=32
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '失信被执行人' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '失信人名称:'||to_clob(INAME)||';   执行依据文号:'||GISTID||';   法院:'||COURTNAME||';   生效法律文书确定的义务:'||to_clob(DUTY)||';   履行情况:'||to_clob(PERFORMANCE) as A,
+        '发布日期:'||TO_CHAR(PUBLISHDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=33
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '被执行人' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '案号:'||CASECODE||';   执行法院:'||EXECCOURTNAME||';   被执行人名称:'||PNAME||';   执行标的:'||to_clob(EXECMONEY) as A,
+        '创建时间:'||TO_CHAR(CASECREATETIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=34
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '开庭公告' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '案号:'||CASEREASON2||';   法院:'||COURT||';   原告/上诉人:'||PLAINTIFF||';   被告/被上诉人:'||DEFENDANT||';   案由'||to_clob(CASEREASON) as A,
+        '开庭日期:'||TO_CHAR(STARTDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=35
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '司法协助' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '执行通知书文号:'||EXECUTENOTICENUM||';   类型/状态:'||TYPESTATE||';   执行法院:'||to_clob(EXECUTIVECOURT)||';   被执行人:'||EXECUTEDPERSON||';   股权数额'||EQUITYAMOUNT as A,
+        null as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=36
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '经营异常' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '列入部门:'||PUTDEPARTMENT||';   列入原因:'||to_clob(PUTREASON)||';   移除部门:'||REMOVEDEPARTMENT||';   移除原因:'||to_clob(REMOVEREASON) as A,
+        '列入日期:'||TO_CHAR(PUTDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||';    移除日期:'||TO_CHAR(REMOVEDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=41
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '行政处罚(工商局)' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '定书文号:'||PUNISHNUMBER||';   行政处罚内容:'||to_clob(CONTENT)||';   描述:'||to_clob(DESCRIPTION)||';   违法行为类型:'||"TYPE" as A,
+        '决定日期:'||TO_CHAR(DECISIONDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=42
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '严重违法' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '列入部门:'||PUNISHNUMBER||';   列入原因:'||to_clob(PUTREASON)||';   移除部门:'||REMOVEDEPARTMENT||';   移除原因:'||to_clob(REMOVEREASON) as A,
+        '列入日期:'||TO_CHAR(PUTDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||';    移除日期:'||TO_CHAR(REMOVEDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=43
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '股权出质' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '注册号:'||REGNUMBER||';   出质人:'||PLEDGOR||';   质权人:'||to_clob(PLEDGEE)||';   出质股权数额:'||EQUITYAMOUNT||';   状态:'||STATE as A,
+        '股权出质设立登记日期:'||TO_CHAR(REGDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||';    股权出质设立发布日期:'||TO_CHAR(PUTDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=44
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '欠税公告' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '纳税人识别号:'||TAXIDNUMBER||';   法人或负责人名称:'||to_clob(LEGALPERSONNAME)||';   纳税人类型:'||TAXPAYERTYPE||';   税务类型:'||"TYPE"||';   欠税税种:'||TAXCATEGORY||';   欠税金额:'||OWNTAXAMOUNT||';   欠税余额:'||OWNTAXBALANCE||';   当前新发生欠税余额:'||NEWOWNTAXBALANCE as A,
+        '发布时间:'||TO_CHAR(PUBLISHDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=46
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '司法拍卖' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '标题:'||TITLE||';   描述:'||to_clob(INTRODUCTION)||';   详细内容:'||to_clob(DETAIL) as A,
+        '公告日期:'||TO_CHAR(PUBTIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        URL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=47
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '清算信息' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '清算组负责人:'||to_clob(MANAGER)||';   清算成员名称:'||MEMBER as A,
+        null as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=48
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        union all
+
+        SELECT
+        TYPEA,
+        '知识产权出质' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '知识产权登记证号:'||CERTIFICATENUM||';   种类:'||"TYPE"||';   出质人名称:'||to_clob(PLEDGOR)||';   质权人名称:'||PLEDGEE||';   状态:'||STATE as A,
+        '公示日期:'||TO_CHAR(PUBLICITYDATE /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=49
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+
+        UNION ALL
+
+        SELECT
+        TYPEA,
+        '行政处罚【信用中国】' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '区域:'||AREANAME||';   处罚事由:'||to_clob(REASON)||';    处罚结果:'||to_clob(RESULT)||';   决定机关:'||DEPARTMENTNAME as A,
+        '决定日期:'||TO_CHAR(DECISIONDATE/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=410
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+
+        SELECT
+        TYPEA,
+        '招投标' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '标题:'||TITLE||';   正文简介:'||to_clob(INTRO)||';    采购人:'||PURCHASER||';   代理机构:'||PROXY as A,
+        '发布时间:'||TO_CHAR(PUBLISHTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=51
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+
+        SELECT
+        TYPEA,
+        '债券信息' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '债券名称:'||to_clob(BONDNAME)||';   债券代码:'||BONDNUM||';    债券类型 :'||BONDTYPE||';   计息方式 :'||CALINTERESTTYPE||'; 债项评级:'||DEBTRATING||'; 信用评级机构:'||CREDITRATINGGOV
+        ||'; 托管机构:'||ESCROWAGENT||'; 行权类型:'||EXERIGHTTYPE||'; 票面利率(%):'||FACEINTERESTRATE||'; 面值:'||FACEVALUE||';  流通范围: '||FLOWRANGE||'; 发行价格(元):'||ISSUEDPRICE||'; 付息频率:'||PAYINTERESTHZ
+        ||'; 实际发行量(亿) :'||REALISSUEDQUANTITY||'; 发行人:'||PUBLISHERNAME||'; 债券起息日'
+        as A,
+        '上市交易日:'||TO_CHAR(BONDTRADETIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||
+        '; 行权日期:'||TO_CHAR(EXERIGHTTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||
+        '; 债劵到期日:'||TO_CHAR(PUBLISHEXPIRETIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||
+        '; 债劵发行日:'||TO_CHAR(PUBLISHTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||
+        '; 债券起息日:'||TO_CHAR(STARTCALINTERESTTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        BIDURL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=52
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+
+        SELECT
+        TYPEA,
+        '购地信息' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '宗地位置:'||To_clob(LOCATION)||';   供地总面积(公顷):'||TOTALAREA||';    成交价款（万元） :'||DEALPRICE||';   供应方式 :'||SUPPLYWAY||'; 土地用途:'||PURPOSE||'; 受让人:'||ASSIGNEE
+        ||'; 上级公司:'||PARENTCOMPANY
+        as A,
+        '约定竣工时间:'||TO_CHAR(ENDTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        LINKURL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=53
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '税务评级' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '纳税人识别号:'||to_clob(NUMBER2)||';   纳税等级:'||GRADE||';    类别:'||CASE TYPE WHEN '0' THEN '国税' ELSE '地税' END||';   评价单位 :'||EVALDEPARTMENT
+        as A,
+        '年份:'||YEAR
+        as B,
+        LINKURL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=55
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+
+        SELECT
+        TYPEA,
+        '抽查检查' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '结果:'||to_clob(CHECKRESULT)||';   类型:'||CHECKTYPE||';    实施机关:'||CHECKORG
+        as A,
+        '日期:'||TO_CHAR(CHECKDATE/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=56
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+
+        SELECT
+        TYPEA,
+        '产品信息' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '产品名:'||NAME||';   描述:'||to_clob(BRIEF)||';    产品分类:'||TYPE||'; 领域'||CLASSES
+        as A,
+        NULL
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=57
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+
+        SELECT
+        TYPEA,
+        '行政许可【工商局】' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '许可证号:'||NUMBER2||';   许可证名称:'||NAME||';    等级:'||GRADE||'; 范围'||to_clob(SCOPE)||'; 证书状态 '||STATE||'; 发证机关'||DEPARTMENT
+        as A,
+        '起始日期:'||FROMDATE||'; 到期日期'||TODATE
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=511
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '行政许可【信用中国】' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '许可证号:'||NUMBER2||';   内容许可:'||to_clob(CONTENT)||';    许可机关:'||DEPARTMENT||'; 审核类型'||AUDITYPE||'; 证书状态 '||STATE||'; 许可机关'||DEPARTMENT
+        as A,
+        '许可决定日期:'||TO_CHAR(DECISIONDATE/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||'; 许可截止日期'||TO_CHAR(ENDDATE/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=512
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '商标信息' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '国际分类code:'||TMCLASS||';   商标名称:'||to_clob(TMNAME)||';    状态:'||STATUS||';  国际分类'||INTCLS||'; 商标状态 '||CATEGORY||'; 商标图片'||TMPIC||'; 注册号'||REGNO||';  申请人'||APPLICANTCN
+        as A,
+        '申请日期:'||TO_CHAR(APPDATE/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=61
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '专利信息' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '专利名称:'||PATENTNAME||';   专利类型:'||PATENTTYPE||';    摘要:'||to_clob(ABSTRACTS)||';  申请号/专利号'||PATENTNUM||';  全部分类号 '||ALLCATNUM||'; 主分类号'||MAINCATNUM||'; 发明人'||INVENTOR||';  代理人'||AGENT||'; 代理机构'||AGENCY||'; 申请人 '||APPLICANTNAME
+        as A,
+        '申请日:'||TO_CHAR(APPLICATIONTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||
+        '; 公开公告日:'||TO_CHAR(PUBDATE/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        IMGURL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=62
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '软件著作权' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '软件名称:'||to_clob(FULLNAME)||';   版本号:'||VERSION||';    著作权人(国籍):'||AUTHORNATIONALITY||';  登记号'||REGNUM||';  分类号 '||CATNUM
+        as A,
+        '首次发表时间:'||TO_CHAR(PUBLISHTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||
+        '; 登记时间:'||TO_CHAR(REGTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        IMGURL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=63
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '作品著作权' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '作品名称:'||to_clob(FULLNAME)||';   作品类别:'||TYPE||';    著作权人名称:'||AUTHORNATIONALITY||';  登记号'||REGNUM
+        as A,
+        '登记日期:'||TO_CHAR(REGTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||
+        '; 创作完成日期:'||TO_CHAR(FINISHTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=64
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '送达公告' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '公告名称:'||TITLE||';   法院名称:'||COURT||';    详情:'||to_clob(CONTENT)
+        as A,
+        '发布日期:'||TO_CHAR(STARTDATE/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=79
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '立案信息' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        ' 案号:'||CASENO||';    案件类型:'||CASETYPE||';    案件状态:'||to_clob(CASESTATUS)||'; 法院:'||COURT||';  承办部门:'||DEPARTMENT||';  承办法官:'||JUDGE||'; 原告:'||PLAINTIFF||'; 被告:'||DEFENDANT||';  第三人:'||THIRD
+        as A,
+        '立案日期:'||TO_CHAR(FILINGDATE/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||
+        '; 开庭日期:'||TO_CHAR(STARTTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||
+        ';  结束日期'||TO_CHAR(CLOSEDATE/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=80
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '税收违法' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '纳税人名称:'||TAXPAYERNAME||';    违法情况:'||to_clob(CASEINFO)||';    案件性质:'||CASETYPE||';  纳税人识别号:'||TAXPAYERNUMBER||';  所属税务机关:'||DEPARTMENT||';  组织机构代码:'||TAXPAYERCODE
+        as A,
+        NULL
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE  TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=81
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '简易注销' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        ' 统一社会信用代码:'||CREDITCODE||';    登记机关:'||to_clob(REGAUTHORITY)||';    公告期:'||ANNOUNCEMENTTERM
+        as A,
+        NULL
+        as B,
+        INVESTORCOMMITMENTDOWNLOADURL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=82
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '环保处罚' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        ' 处罚结果:'||EXECUTION||';    处罚单位:'||PUNISHDEPARTMENT||';    处罚事由:'||to_clob(PUNISHREASON)||'; 处罚依据:'||to_clob(PUNISHBASIS)||';  违反法律:'||to_clob(LAWBREAKING)||';  决定文书号:'||PUNISHNUMBER
+        as A,
+        '处罚日期:'||TO_CHAR(PUBLISHTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=83
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '公示催告' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '票据号:'||BILLNUM||';    票据类型:'||BILLTYPE||';    票面金额:'||BILLAMT||'; 持票人:'||OWNERCOMPANYNAME||';   出票人:'||DRAWCOMPANYNAME||';   付款银行:'||PAYCOMPANYNAME||'; 公告内容:'||to_clob(INFODETAIL)
+        as A,
+        '出票日:'||TO_CHAR(BILLBEGINDT/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        ||'到期日 :'||TO_CHAR(BILLENDDT/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        ||'公告日期:'||TO_CHAR(PUBLISHDT/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=84
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '土地抵押' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '抵押面积(公顷):'||MORTGAGEAREA||';    票据类型:'||BILLTYPE||';    票面金额:'||BILLAMT||'; 持票人:'||OWNERCOMPANYNAME||';   出票人:'||DRAWCOMPANYNAME||';   付款银行:'||PAYCOMPANYNAME||'; 公告内容:'||to_clob(INFODETAIL)
+        as A,
+        '出票日:'||TO_CHAR(BILLBEGINDT/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        ||'到期日 :'||TO_CHAR(BILLENDDT/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        ||'公告日期:'||TO_CHAR(PUBLISHDT/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=85
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '土地转让' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '土地面积(公顷):'||AREA||';    土地级别:'||LEVEL3||';    原土地使用权人:'||USERCHANGEPRE||'; 转让方式:'||to_clob(MERCHANDISETYPE)||';    土地使用权类型:'||USETYPE||';   土地使用年限:'||PAYCOMPANYNAME||'; 转让价格(万元）:'||MERCHANDISPRICE||'; 现土地使用权人:'||USERCHANGENOW||';  土地用途:'||USEFUL||'; 土地利用状况:'||SITUATION
+        as A,
+        '成交日期:'||TO_CHAR(MERCHANDISETIMECLEAN/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=86
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '地块公示' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '项目名称'||PROJECTNAME||'土地面积(公顷):'||LANDAREA||';    地块位置:'||LANDLOCATION||';     受让单位:'||LANDUSERIGHTPERSON||'; 土地用途:'||LANDUSEFULNESS||';    公示期:'||PUBLICANNOUNCEMENTPERIOD||';   意见反馈方式:'||to_clob(FEEDBACKMETHOD)||';  发布机关 :'||PUBLICATIONORGANIZE
+        as A,
+        '发布日期:'||TO_CHAR(PUBLICATIONDATE/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=87
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '电信许可' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '许可证号:'||LICENSENUMBER||' 业务及其覆盖范围:'||to_clob(BUSINESSSCOPE)||';    是否有效:'||ISAVAILABLE
+        as A,
+        null
+        as B,
+        NULL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=88
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '限制消费令' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '姓名:'||XNAME||' 企业信息:'||to_clob(QYINFO)||';    是否有效:'||ISAVAILABLE
+        as A,
+        '立案日期:'||TO_CHAR(CASECREATETIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        ORIURL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=89
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '终本案件' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '案号:'||CASECODE||' 身份证号码/组织机构代码:'||PARTYCARDNUM||';     执行法院:'||to_clob(EXECCOURTNAME)||';  执行标的:'||EXECMONEY||';  未履行金额:'||NOEXECMONEY
+        as A,
+        '终本日期:'||TO_CHAR(CASEFINALTIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')||
+        '; 立案日期:'||TO_CHAR(CASECREATETIME/(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')
+        as B,
+        ORIURL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=90
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '大股东变更' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '现大股东名称:'||to_clob(BIGSHAREHOLDER)||' 原大股东名称:'||BIGSHAREHOLDERBEFORE
+        as A,
+        null
+        as B,
+        null as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE  TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=116
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '股权变更' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '股东名称:'||to_clob(SHAREHOLDERNAME)||'; 原出资比例:'||PERCENTBEFORE||';     现出资比例:'||PERCENT||';  原认缴出资额:'||CAPITALBEFORE||';  现认缴出资额:'||CAPITAL
+        as A,
+        null
+        as B,
+        ORIURL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=122
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '退出对外投资' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '被投资企业名称:'||to_clob(NAME)||'; 投资数额:'||CAPITAL
+        as A,
+        null
+        as B,
+        ORIURL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=120
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '新增对外投资' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '被投资企业名称:'||to_clob(NAME)||'; 投资数额:'||CAPITAL
+        as A,
+        null
+        as B,
+        ORIURL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=121
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        UNION ALL
+        SELECT
+        TYPEA,
+        '新闻舆情' as TYPENAME,
+        COMPANYGID,
+        COMPANYNAME,
+        RISKLEVEL,
+        TO_CHAR(UPDATETIME,'YYYY-MM-DD') AS UPDATETIME,
+        '新闻标题:'||TITLE||';    来源:'||to_clob(SOURCE)
+        as A,
+        NULL as B,
+        URL as URL
+        FROM
+        BIUSER.ODS_TYC_PUSHSTRUCT
+        WHERE TO_CHAR(UPDATETIME,'YYYY-MM-DD')     BETWEEN #{startDate} AND #{endDate}
+        and TYPEA=3001
+        and COMPANYNAME in (SELECT DISTINCT ENTNAME FROM LOG_TYC_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY=#{userName})
+        <if test="riskleve != null and riskleve.size > 0">
+            and RISKLEVEL in
+            <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="companyName != null and companyName.size > 0">
+            and COMPANYNAME in
+            <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+
+        )
+        SELECT COUNT(1) as co
+        FROM (
+        SELECT * FROM ds1
+        where 1=1 <if test="eventType != null and eventType.size > 0">
+        and TYPENAME in
+        <foreach collection="eventType" index="index" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </if>
+        ORDER BY UPDATETIME DESC
+        ) A
+
+    </select>
+
+
+    <resultMap id="getZCXCompayNameListResultMap" type="java.lang.String">
+        <result column="entName" jdbcType="VARCHAR" property="entName" />
+    </resultMap>
+    <select id="getZCXCompayNameList" resultType="java.lang.String">
+      SELECT DISTINCT ENTNAME FROM LOG_ZCX_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY= #{userName}
+    </select>
+
+    <resultMap id="getPlatformNewsResultMap" type="com.fanruan.platform.bean.PlatformNews">
+        <result column="pushType" jdbcType="VARCHAR" property="pushType" />
+        <result column="promptinfo" jdbcType="VARCHAR" property="promptinfo" />
+        <result column="userName" jdbcType="VARCHAR" property="userName" />
+        <result column="updateTime" jdbcType="VARCHAR" property="updateTime" />
+    </resultMap>
+    <select id="getPlatformNews" resultType="com.fanruan.platform.bean.PlatformNews">
+        SELECT M.* FROM (
+        SELECT ROWNUM AS rowno,N.*
+        FROM (
+        SELECT
+        PUSH_TYPE,
+        PROMPTINFO,
+        USER_NAME,
+        TO_CHAR(PUSH_TIME,'YYYY-MM-DD') AS UPDATETIME
+        FROM
+        BIUSER.INPUT_PUSH
+        WHERE TO_CHAR(PUSH_TIME,'YYYY-MM-DD') BETWEEN #{startDate} AND #{endDate}
+        and USER_NAME = #{userName}
+        and PUSH_TYPE != '企业信息变动'
+        order by UPDATETIME DESC,PUSH_TYPE DESC
+        )N
+        )M
+        where 1 = 1
+        AND rowno &lt;= #{pageIndex} * #{pageSize}
+        AND rowno &gt; (#{pageIndex}-1) * #{pageSize}
+    </select>
+
+    <resultMap id="getPlatformNewsCountResultMap" type="java.lang.Integer">
+        <result column="co" jdbcType="VARCHAR" property="co" />
+    </resultMap>
+
+    <select id="getPlatformNewsCount" resultType="java.lang.Integer">
+         SELECT COUNT(*) as co FROM (
+            SELECT
+            PUSH_TYPE,
+            PROMPTINFO,
+            USER_NAME,
+            TO_CHAR(PUSH_TIME,'YYYY-MM-DD') AS UPDATETIME
+            FROM
+            BIUSER.INPUT_PUSH
+            WHERE TO_CHAR(PUSH_TIME,'YYYY-MM-DD') BETWEEN #{startDate} AND #{endDate}
+            and USER_NAME = #{userName}
+            and PUSH_TYPE != '企业信息变动'
+            order by UPDATETIME DESC,PUSH_TYPE DESC
+         )
+    </select>
+
+
+    <resultMap id="getRiskMorningPostResultMap" type="com.fanruan.platform.bean.RiskMorningPost">
+        <result column="enterpriseName" jdbcType="VARCHAR" property="enterpriseName" />
+        <result column="entType" jdbcType="VARCHAR" property="entType" />
+        <result column="levelType" jdbcType="VARCHAR" property="levelType" />
+        <result column="typeName" jdbcType="VARCHAR" property="typeName" />
+        <result column="description" jdbcType="VARCHAR" property="description" />
+        <result column="UD" jdbcType="VARCHAR" property="UD" />
+    </resultMap>
+    <select id="getRiskMorningPost" resultType="com.fanruan.platform.bean.RiskMorningPost">
+        SELECT M.* FROM (
+        SELECT ROWNUM AS rowno,N.*
+        FROM (
+            SELECT
+            TO_CHAR(R.CREATE_TIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as cd,
+            case R.LEVEL1 when '0' then '一般' when '1' then '重大' when '2' then '警示' end as LEVEL_TYPE,
+            case R.ENT_TYPE when '0' then '非城投企业' when '1' then '城投企业' end as  ENT_TYPE,
+            R.DESCRIPTION,
+            R.TYPE_NAME,
+            R.CREDIT_CODE,
+            TO_CHAR(R.UPDATE_TIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as ud,
+            R.ENTERPRISE_NAME
+            FROM
+            BIUSER.ODS_ZCX_RISKEVENT R
+            WHERE TO_CHAR(R.CREATE_TIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') BETWEEN #{startDate} AND #{endDate}
+            and ENTERPRISE_NAME in (SELECT DISTINCT ENTNAME FROM LOG_ZCX_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY= #{userName})
+            <if test="riskleve != null and riskleve.size > 0">
+                and R.LEVEL1 in
+                <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="companyName != null and companyName.size > 0">
+                and R.ENTERPRISE_NAME in
+                <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            ORDER BY cd desc,R.ENTERPRISE_NAME
+        )N
+        )M
+        where 1 = 1
+        AND rowno &lt;= #{pageIndex} * #{pageSize}
+        AND rowno &gt; (#{pageIndex}-1) * #{pageSize}
+    </select>
+
+    <resultMap id="getRiskMorningPostCountResultMap" type="java.lang.Integer">
+        <result column="co" jdbcType="VARCHAR" property="co" />
+    </resultMap>
+
+    <select id="getRiskMorningPostCount" resultType="java.lang.Integer">
+         SELECT COUNT(*) as co FROM (
+            SELECT
+            TO_CHAR(R.CREATE_TIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as cd,
+            case R.LEVEL1 when '0' then '一般' when '1' then '重大' when '2' then '警示' end as LEVEL_TYPE,
+            case R.ENT_TYPE when '0' then '非城投企业' when '1' then '城投企业' end as  ENT_TYPE,
+            R.DESCRIPTION,
+            R.TYPE_NAME,
+            R.CREDIT_CODE,
+            TO_CHAR(R.UPDATE_TIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as ud,
+            R.ENTERPRISE_NAME
+            FROM
+            BIUSER.ODS_ZCX_RISKEVENT R
+            WHERE TO_CHAR(R.CREATE_TIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') BETWEEN #{startDate} AND #{endDate}
+            and ENTERPRISE_NAME in (SELECT DISTINCT ENTNAME FROM LOG_ZCX_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY= #{userName})
+            <if test="riskleve != null and riskleve.size > 0">
+                and R.LEVEL1 in
+                <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="companyName != null and companyName.size > 0">
+                and R.ENTERPRISE_NAME in
+                <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            ORDER BY cd desc,R.ENTERPRISE_NAME
+         )
+    </select>
+
+
+    <resultMap id="getMorningNewsResultMap" type="com.fanruan.platform.bean.MorningNews">
+        <result column="enterpriseName" jdbcType="VARCHAR" property="enterpriseName" />
+        <result column="entType" jdbcType="VARCHAR" property="entType" />
+        <result column="levelType" jdbcType="VARCHAR" property="levelType" />
+        <result column="description" jdbcType="VARCHAR" property="description" />
+        <result column="newsType" jdbcType="VARCHAR" property="newsType" />
+        <result column="title" jdbcType="VARCHAR" property="title" />
+        <result column="newstags" jdbcType="VARCHAR" property="newstags" />
+        <result column="URL" jdbcType="VARCHAR" property="URL" />
+        <result column="CD" jdbcType="VARCHAR" property="CD" />
+    </resultMap>
+    <select id="getMorningNews" resultType="com.fanruan.platform.bean.MorningNews">
+        SELECT M.* FROM (
+        SELECT ROWNUM AS rowno,N.*
+        FROM (
+            SELECT
+            TO_CHAR(N.CREATE_TIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as cd,
+            case N.LEVEL1 when '0' then '一般' when '1' then '重大' when '2' then '警示' end as LEVEL_TYPE,
+            case N.ENT_TYPE when '0' then '非城投企业' when '1' then '城投企业' end as  ENT_TYPE,
+            N.DESCRIPTION,
+            N.TYPE_NAME,
+            N.CREDIT_CODE,
+            TO_CHAR(N.UPDATE_TIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as ud,
+            N.ENTERPRISE_NAME,
+            N.NEWSTAGS,
+            N.TITLE,
+            N.NEWSTYPE,
+            N.URL,
+            TO_CHAR(N.PUBLISHTIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as pd
+
+            FROM
+            BIUSER.ODS_ZCX_NEWSPUBOPINION N
+            WHERE TO_CHAR(N.CREATE_TIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')  BETWEEN #{startDate} AND #{endDate}
+            <if test="riskleve != null and riskleve.size > 0">
+                and N.LEVEL1 in
+                <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="newsEmotion != null and newsEmotion.size > 0">
+                and N.DESCRIPTION in
+                <foreach collection="newsEmotion" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="companyName != null and companyName.size > 0">
+                and N.ENTERPRISE_NAME in
+                <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            and ENTERPRISE_NAME in (SELECT DISTINCT ENTNAME FROM LOG_ZCX_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY = #{userName} )
+            ORDER BY pd desc,N.ENTERPRISE_NAME
+        )N
+        )M
+        where 1 = 1
+        AND rowno &lt;= #{pageIndex} * #{pageSize}
+        AND rowno &gt; (#{pageIndex}-1) * #{pageSize}
+    </select>
+
+    <resultMap id="getMorningNewsCountResultMap" type="java.lang.Integer">
+        <result column="co" jdbcType="VARCHAR" property="co" />
+    </resultMap>
+
+    <select id="getMorningNewsCount" resultType="java.lang.Integer">
+        SELECT COUNT(*) as co FROM (
+            SELECT
+            TO_CHAR(N.CREATE_TIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as cd,
+            case N.LEVEL1 when '0' then '一般' when '1' then '重大' when '2' then '警示' end as LEVEL_TYPE,
+            case N.ENT_TYPE when '0' then '非城投企业' when '1' then '城投企业' end as  ENT_TYPE,
+            N.DESCRIPTION,
+            N.TYPE_NAME,
+            N.CREDIT_CODE,
+            TO_CHAR(N.UPDATE_TIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as ud,
+            N.ENTERPRISE_NAME,
+            N.NEWSTAGS,
+            N.TITLE,
+            N.NEWSTYPE,
+            N.URL,
+            TO_CHAR(N.PUBLISHTIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD') as pd
+
+            FROM
+            BIUSER.ODS_ZCX_NEWSPUBOPINION N
+            WHERE TO_CHAR(N.CREATE_TIME /(1000 * 60 * 60 * 24)+ TO_DATE('1970-01-01', 'YYYY-MM-DD'), 'YYYY-MM-DD')  BETWEEN #{startDate} AND #{endDate}
+            <if test="riskleve != null and riskleve.size > 0">
+                and N.LEVEL1 in
+                <foreach collection="riskleve" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="newsEmotion != null and newsEmotion.size > 0">
+                and N.DESCRIPTION in
+                <foreach collection="newsEmotion" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="companyName != null and companyName.size > 0">
+                and N.ENTERPRISE_NAME in
+                <foreach collection="companyName" index="index" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+            and ENTERPRISE_NAME in (SELECT DISTINCT ENTNAME FROM LOG_ZCX_CONCERN WHERE CONCERN_FLAG=1 AND UPDATEBY = #{userName} )
+            ORDER BY pd desc,N.ENTERPRISE_NAME
+        )
+    </select>
+
+
 </mapper>
 

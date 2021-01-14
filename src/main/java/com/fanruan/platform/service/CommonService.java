@@ -498,4 +498,57 @@ public class CommonService {
         return hs;
     }
 
+    public List<String> getEventTypeList(String userName, List<String> riskleve, List<String> companyName, String startDate, String endDate) {
+        return commonsMapper.getEventTypeList(userName,riskleve,companyName,startDate,endDate);
+    }
+
+    public HashMap<String,Object> getRealTimeWarning(HashMap<String,Object> hs,String userName, List<String> riskleve, List<String> companyName, List<String> eventType,String startDate, String endDate,Integer pageIndex, Integer pageSize) {
+        List<RealTimeWarning> realTimeWarningList =  commonsMapper.getRealTimeWarning(userName,riskleve,companyName,eventType,startDate,endDate,pageIndex,pageSize);
+        Integer totalRecords = commonsMapper.getRealTimeWarningCount(userName,riskleve,companyName,eventType,startDate,endDate,pageIndex,pageSize);
+        hs.put("code", "0");
+        hs.put("msg", "数据更新成功！");
+        hs.put("realTimeWarningList", realTimeWarningList);
+        hs.put("totalRecords",totalRecords);
+        hs.put("totalPages",Math.ceil(totalRecords/pageSize));
+        return hs;
+    }
+
+    public HashMap<String, Object> getPlatformNews(HashMap<String, Object> hs, String userName, String startDate, String endDate, Integer pageIndex, Integer pageSize) {
+        List<PlatformNews> platformNewsList =  commonsMapper.getPlatformNews(userName,startDate,endDate,pageIndex,pageSize);
+        Integer totalRecords = commonsMapper.getPlatformNewsCount(userName,startDate,endDate,pageIndex,pageSize);
+        hs.put("code", "0");
+        hs.put("msg", "数据更新成功！");
+        hs.put("platformNewsList", platformNewsList);
+        hs.put("totalRecords",totalRecords);
+        hs.put("totalPages",Math.ceil(totalRecords/pageSize));
+        return hs;
+    }
+
+    public HashMap<String, Object> getRiskMorningPost(HashMap<String, Object> hs, String userName, List<String> riskleve, List<String> companyName, String startDate, String endDate, Integer pageIndex, Integer pageSize) {
+        List<RiskMorningPost> riskMorningPostList =  commonsMapper.getRiskMorningPost(userName,riskleve,companyName,startDate,endDate,pageIndex,pageSize);
+        Integer totalRecords = commonsMapper.getRiskMorningPostCount(userName,riskleve,companyName,startDate,endDate,pageIndex,pageSize);
+        for(int i = 0; i < riskMorningPostList.size(); i++){
+            riskMorningPostList.get(i).setPushSource("中诚信");
+        }
+        hs.put("code", "0");
+        hs.put("msg", "数据更新成功！");
+        hs.put("riskMorningPostList", riskMorningPostList);
+        hs.put("totalRecords",totalRecords);
+        hs.put("totalPages",Math.ceil(totalRecords/pageSize));
+        return hs;
+    }
+
+    public HashMap<String, Object> getMorningNews(HashMap<String, Object> hs, String userName, List<String> riskleve, List<String> companyName, List<String> newsEmotion, String startDate, String endDate, Integer pageIndex, Integer pageSize) {
+        List<MorningNews> morningNewsList =  commonsMapper.getMorningNews(userName,riskleve,companyName,newsEmotion,startDate,endDate,pageIndex,pageSize);
+        Integer totalRecords = commonsMapper.getMorningNewsCount(userName,riskleve,companyName,newsEmotion,startDate,endDate,pageIndex,pageSize);
+        for(int i = 0; i < morningNewsList.size(); i++){
+            morningNewsList.get(i).setPushSource("中诚信");
+        }
+        hs.put("code", "0");
+        hs.put("msg", "数据更新成功！");
+        hs.put("morningNewsList", morningNewsList);
+        hs.put("totalRecords",totalRecords);
+        hs.put("totalPages",Math.ceil(totalRecords/pageSize));
+        return hs;
+    }
 }

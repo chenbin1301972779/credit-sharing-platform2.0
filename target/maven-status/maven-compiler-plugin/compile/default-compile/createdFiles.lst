@@ -37,6 +37,7 @@ com/sinosure/exchange/edi/service/GetEdiQuotaApproveInfoResponse.class
 com/sinosure/exchange/edi/po/ArrayOfDomTotalDeclareApproveInfo.class
 com/sinosure/exchange/edi/po/ArrayOfShipmentTotalApproveInfo.class
 com/fanruan/platform/bean/CompanyExtendInfo.class
+com/fanruan/platform/bean/MorningNews.class
 com/fanruan/platform/dao/TianYanChaInfoDao.class
 com/sinosure/exchange/edi/po/EdiPolicyInfoDetail.class
 com/sinosure/exchange/edi/po/ArrayOfPlnoticeApproveInfo.class
@@ -129,6 +130,7 @@ com/fanruan/platform/dao/ZhongXinBaoLogDao.class
 com/sinosure/exchange/edi/po/ArrayOfPlnotice.class
 com/sinosure/exchange/edi/po/ArrayOfSpecialFeeRate.class
 com/sinosure/exchange/edi/po/Plnotice.class
+com/fanruan/platform/bean/RealTimeWarning.class
 com/fanruan/platform/util/OrderCodeFactory.class
 com/sinosure/exchange/edi/service/GetEdiShipmentTotalApproveInfo.class
 com/sinosure/exchange/edi/service/DoEdiInfoAttachDownloadResponse.class
@@ -206,6 +208,7 @@ com/sinosure/exchange/edi/service/GetEdiRatingApproveInfoResponse.class
 com/sinosure/exchange/edi/po/ArrayOfNoLcQuotaApplyInfo.class
 com/fanruan/platform/Swagger3Config.class
 com/fanruan/platform/service/UserService.class
+com/fanruan/platform/bean/RiskMorningPost.class
 com/sinosure/exchange/edi/po/ShipmentApproveInfo.class
 com/fanruan/platform/bean/Area.class
 com/sinosure/exchange/edi/po/FeeNoticeShipmentInfo.class
@@ -321,6 +324,7 @@ com/fanruan/platform/bean/Industry.class
 com/sinosure/exchange/edi/po/ArrayOfBasicFeeRate.class
 com/sinosure/exchange/edi/service/DoEdiDomDeclareApply.class
 com/sinosure/exchange/edi/service/GetExchangeRateResponse.class
+com/fanruan/platform/bean/PlatformNews.class
 com/sinosure/exchange/edi/service/DoEdiDomReceiptApply.class
 com/fanruan/platform/bean/TianYanChaInfo.class
 com/fanruan/platform/util/VerifyEmail.class

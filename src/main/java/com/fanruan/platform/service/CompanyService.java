@@ -110,6 +110,9 @@ public class CompanyService {
     private ReportDao reportDao;
 
     @Autowired
+    private BlackInfoDao blackInfoDao;
+
+    @Autowired
     private CompanyIDVerificationDao companyIDVerificationDao;
     @Autowired
     private AreaDao areaDao;
@@ -1464,4 +1467,15 @@ public class CompanyService {
         return company;
     }
 
+    public List<String> getCompanyNameList(String userName){
+      return commonsMapper.getCompayNameList(userName);
+    }
+
+    public List<String> getZCXCompayNameList(String userName){
+        return commonsMapper.getZCXCompayNameList(userName);
+    }
+
+    public Optional<BlackInfo> getCompanyStatus(String compayName, String creditCode,String updateBy) {
+        return blackInfoDao.findByEntNameAndCodeAndUpdateBy(compayName, creditCode,updateBy);
+    }
 }
